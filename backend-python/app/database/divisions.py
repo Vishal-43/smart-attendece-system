@@ -14,7 +14,7 @@ class Division(Base):
     year = Column(Integer, nullable=False)  # 1-4
     semester = Column(Integer, nullable=False)  # 1-8
     academic_year = Column(String(20), nullable=False)
-    capacity = Column(Integer)
+    capacity = Column(Integer,nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
