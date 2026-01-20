@@ -23,17 +23,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def create_tables():
-    """Create all tables in database"""
-    try:
-        logger.info("📦 Creating database tables...")
-        Base.metadata.create_all(bind=engine)
-        logger.info("✅ Database tables created successfully!")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Error creating tables: {str(e)}")
-        return False
-
 
 def seed_users(session):
     """Insert sample users"""
@@ -517,9 +506,6 @@ def main():
     logger.info("🌱 Starting Database Seeding...")
     logger.info("="*60 + "\n")
     
-    # Step 1: Create tables
-    if not create_tables():
-        return
     
     session = SessionLocal()
     
