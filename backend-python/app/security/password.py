@@ -1,25 +1,26 @@
-import os, dotevn
+import os
+from dotenv import load_dotenv
 from passlib.context import CryptContext
 
-dotevn.load_dotenv()
+load_dotenv()
 
-
-pwd_context = CryptContext(schemes=[os.getenv("scheme")], deprecated="auto")
-salt = os.getenv("salt").encode()
-salt_size = int(os.getenv("salt_size"))
-rounds = int(os.getenv("rounds"))
-
-pwd_context.update(
-    pbkdf2_sha256__default_salt_size=salt_size,
-    pbkdf2_sha256__default_rounds=rounds)
-
+pwd_context = CryptContext(
+    schemes=[os.getenv("scheme")],
+    deprecated="auto",
+    pbkdf2_sha256__default_rounds=int(os.getenv("rounds")),
+    pbkdf2_sha256__default_salt_size=int(os.getenv("salt_size")),
+)
 
 def hash_password(password:str,user:str) -> str:
-    return pwd_context.using(salt=salt).hash(password,user=user)
+    return pwd_context.hash(password+user)
 
 def verify_password(password:str, hashed_password:str,user:str) -> str:
-    return pwd_context.using(salt=salt).verify(password,hashed_password,user=user)
+    return pwd_context.verify(password+user,hashed_password)
 
 
-
+if __name__ == "__main__":
+    plain_password = "123456789"
+    user = "admin"
+    hashed = hash_password(plain_password,user)
+    print("hashed password:", hashed,"\n" ,verify_password(plain_password,hashed,user))
 

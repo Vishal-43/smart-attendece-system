@@ -30,9 +30,3 @@ def decode_token(token:str) -> dict:
     
 
 
-if __name__ == "__main__":
-    sample_data = {"sub":"user1"}
-    token = create_access_token(sample_data)
-    print("Generated Token:", token)
-    decoded = decode_token(token)
-    print("Decoded Token:", decoded)

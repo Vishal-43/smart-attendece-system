@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class AuthLoginRequest(BaseModel):
+    username:str 
     email: EmailStr
     password: str
 
@@ -19,7 +20,6 @@ class UserPublic(BaseModel):
     username: str
     role: str
     is_active: bool
-
     class Config:
         from_attributes = True
 

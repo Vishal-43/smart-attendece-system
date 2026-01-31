@@ -5,15 +5,17 @@ from app.schemas.auth import AuthLoginRequest, AuthTokens, TokenRefreshRequest, 
 from app.security.token import create_access_token, create_refresh_token, decode_token
 from app.security.password import verify_password
 from app.database.user import User
-
+import logging
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 @router.post("/login",response_model=AuthTokens)
 def login(credentials:AuthLoginRequest, db:Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
-
-    if not user or not verify_password(credentials.password, user.password_hash):
+    logging.warning(f" login attempt for {credentials}")
+    logging.warning(f" fetched user {user.id}", user.username,user.password_hash)
+    if not user or not verify_password(credentials.password, user.password_hash,credentials.name):
+        
         raise HTTPException(status_code=401, detail="invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="inactive user")
