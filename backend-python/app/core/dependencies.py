@@ -6,11 +6,11 @@ from app.database.database import SessionLocal
 from app.database.user import User
 from app.schemas.auth import TokenPayload
 from app.security.token import decode_token
-
+from typing import Generator
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db

@@ -1,11 +1,11 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-class AuthLoginReuest(BaseModel):
+class AuthLoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-class AuthTOkens(BaseModel):
+class AuthTokens(BaseModel):
     access_token:str
     refresh_token:str
     token_type:str = "bearer"
@@ -26,5 +26,5 @@ class UserPublic(BaseModel):
 class TokenPayload(BaseModel):
     sub: str
     exp: int
-    
+
     
