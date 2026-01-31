@@ -13,6 +13,7 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": exp_min})
     encoded_jwt = jwt.encode(to_encode, os.getenv('JWT_SECRET'), algorithm=os.getenv('JWT_ALGORITHM'))
     return encoded_jwt
+
 def create_refresh_token(data: dict) -> str:
     to_encode = data.copy()
     exp_min = datetime.utcnow() + timedelta(minutes=int(os.getenv('REFRESH_TOKEN_EXPIRE_MINUTES')))
