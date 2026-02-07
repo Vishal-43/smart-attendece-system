@@ -55,18 +55,13 @@ def update_division(division_id: int, division_in: DivisionUpdate, db: Session):
     if not division:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Division not found")
     
-    up_division = Division(
-        branch_id = division_in.branch_id,
-        name = division_in.name,
-        year = division_in.year,
-        semester = division_in.semester,
-        academic_year = division_in.academic_year,
-        capacity = division_in.capacity
-    )
-
-    division.update(up_division.dict(exclude_unset=True))
+    for var, value in vars(division_in).items():
+        if value is not None:
+            setattr(division,var,value)
+    
     db.commit()
-    return division.first()
+    db.refresh(division)
+    return division
 
 @router.delete("/{division_id}", dependencies=[Depends(require_admin)])
 def delete_division(division_id: int, db:Session = Depends(get_db)):

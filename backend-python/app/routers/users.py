@@ -50,18 +50,17 @@ def update_user(user_id:int, user_in: UserUpdate, db: Session = Depends(get_db),
     if curr_user.role.value != "ADMIN" or curr_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Access denied")
     
-    up_user = User(
-        email=user_in.email,
-        username = user_in.username,
-        password_hash = hash_password(user_in.password, user_in.username),
-        first_name = user_in.first_name,
-        last_name = user_in.last_name,
-        phone = user_in.phone,
-        role = user_in.role
-    )
-    db_user.update(up_user.dict(exclude_unset=True))
+
+    for var, value in vars(user_in).items():
+        if value is not None:
+            if var == "password" :
+                db_user.password_hash = hash_password(value, db_user.username)
+            else:
+                setattr(db_user, var, value)
+    
     db.commit()
-    return db_user.first()
+    db.refresh(db_user)
+    return db_user
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id:int, db: Session = Depends(get_db), curr_user=Depends(get_current_user)):

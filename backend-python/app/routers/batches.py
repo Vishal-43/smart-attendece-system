@@ -35,14 +35,10 @@ def update_batch(batch_id: int, batch_in: BatchUpdate, db: Session = Depends(get
     batch = db.query(batch).filter(Batch.id == batch_id).filter(Batch.id == batch_id).first()
     if not batch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="batch not found")
-    up_batch = Batch(
-        division_id = batch_in.division_id,
-        name = batch_in.name,
-        batch_number = batch_in.batch_number, 
-        semester = batch_in.semester,
-        academic_year = batch_in.academic_year
-    )
-    batch.update(up_batch.dict(exclude_unset=True))
+    for var, value in vars(batch_in).items():
+        if value is not None:
+            setattr(batch,var, value)
+    
     db.commit()
     db.refresh(batch)
     return batch

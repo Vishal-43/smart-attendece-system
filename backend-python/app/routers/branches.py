@@ -62,15 +62,14 @@ def update_branch(branch_id: int, branch_in: BranchUpdate, db: Session = Depends
                 db_branch = db.query(Branch).filter(Branch.name == branch_in.name, Branch.id != branch_id).first()
                 if db_branch:
                     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Branch name aready exists")
-    up_branch = Branch(
-                    course_id = branch_in.course_id,
-                    name = branch_in.name,
-                    code = branch_in.code,
-                    branch_code = branch_in.branch_code
-                )
-    db_branch.update(up_branch.dict(exclude_unset=True))
+    
+    for var,value in vars(branch_in).items():
+        if value is not None:
+            setattr(db_branch, var, value)
+
     db.commit()
-    return db_branch.first()
+    db.refresh(db_branch)
+    return db_branch
 
 @router.delete("/{branch_id}", dependencies=[Depends(require_admin)])
 def delete_branch(branch_id: int, db: Session = Depends(get_db)):

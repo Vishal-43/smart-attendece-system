@@ -60,13 +60,12 @@ def update_course(course_id: int, course_in:CourseUpdate, db: Session = Depends(
         if db_course:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="course name already exists")
         
-    up_course = Course(
-        name = course_in.name,
-        code = course_in.code,
-        duration_years = course_in.duration_years,
-        total_semesters = course_in.total_semesters,
-        collage_code = course_in.college_code
-    )
+    for var, value in vars(course_in).items():
+        if value is not None:
+            setattr(db_course,var, value)
+    db.commit()
+    db.refresh(db_course)
+    return db_course
 
 @route.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 def delete_course(Course_id: int, db:Session = Depends(get_db)):
