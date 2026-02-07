@@ -68,7 +68,7 @@ def delete_enrollment(enrollment_id: int, db:Session = Depends(get_db)):
     db.delete(db_enrollment)
     db.commit()
 
-    
+
 
         
 
