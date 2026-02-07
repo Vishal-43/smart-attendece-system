@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, require_admin
-from app.schemas import CourseCreate, CourseOut, CourseUpdate
-from app.database.user import user 
-from app.security.password import hash_password
+from app.schemas.courses import CourseCreate, CourseOut, CourseUpdate
 from app.database.courses import Course
 
 

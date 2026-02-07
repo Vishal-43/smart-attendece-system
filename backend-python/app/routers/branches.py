@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, require_admin
-from app.schemas import BranchCreate, BranchOut, BranchUpdate
+from app.schemas.branches import BranchCreate, BranchOut, BranchUpdate
 from app.database.branches import Branch 
 
 router = APIRouter(prefix="/api/v1/branches", tags=["branches"])
