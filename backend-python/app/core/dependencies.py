@@ -1,5 +1,5 @@
-import os 
-from fastapi import Depends,HTTPException, status
+import os
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
@@ -10,6 +10,7 @@ from typing import Generator
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
@@ -17,7 +18,10 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         db.close()
 
-def get_current_user(token:str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+) -> User:
     try:
         payload = decode_token(token)
         user_id: str = payload.get("sub")
@@ -31,17 +35,20 @@ def get_current_user(token:str = Depends(oauth2_scheme), db: Session = Depends(g
         raise HTTPException(status_code=404, detail="user not found")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Inactive user")
-    return user 
+    return user
+
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role.value not in ["ADMIN"]:
-        raise HTTPException(status_code=403,detail="admin access required")
+        raise HTTPException(status_code=403, detail="admin access required")
     return current_user
+
 
 def required_teacher(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role.value not in ["ADMIN", "TEACHER"]:
         raise HTTPException(status_code=403, detail="Teacher access required")
     return current_user
+
 
 def require_student(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role.value not in ["STUDENT", "ADMIN"]:

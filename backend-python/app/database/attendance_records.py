@@ -18,7 +18,9 @@ class AttendanceRecord(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     timetable_id = Column(Integer, ForeignKey("timetables.id"), nullable=False)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=False)
+    enrollment_id = Column(
+        Integer, ForeignKey("student_enrollments.id"), nullable=False
+    )
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False)
     batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
@@ -27,4 +29,6 @@ class AttendanceRecord(Base):
     status = Column(Enum(AttendanceStatus), nullable=False)
     device_info = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )

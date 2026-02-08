@@ -4,6 +4,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 
 from app.database.database import Base
 
+
 class OTPCode(Base):
     __tablename__ = "otp_codes"
 

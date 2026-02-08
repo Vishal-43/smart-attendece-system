@@ -3,8 +3,9 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from app.database.student_enrollments import EnrollmentStatus, EnrollmentYear
 
+
 class EnrollmentBase(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
     student_id: int
     course_id: int
     branch_id: int
@@ -17,18 +18,21 @@ class EnrollmentBase(BaseModel):
     status: EnrollmentStatus
     has_kt: bool = False
 
+
 class EnrollmentCreate(EnrollmentBase):
-    pass 
+    pass
+
 
 class EnrollmentUpdate(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
     current_year: Optional[EnrollmentYear] = None
     current_semester: Optional[int] = None
     status: Optional[EnrollmentStatus] = None
     has_kt: Optional[bool] = None
 
+
 class EnrollmentOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True, extra='ignore')
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: int
     student_id: int
     course_id: int
@@ -43,4 +47,3 @@ class EnrollmentOut(BaseModel):
     has_kt: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    

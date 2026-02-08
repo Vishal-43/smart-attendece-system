@@ -15,4 +15,6 @@ class Course(Base):
     total_semesters = Column(Integer, nullable=False)
     college_code = Column(String(10), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )

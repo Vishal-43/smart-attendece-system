@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 
-from app.database.user import User  
+from app.database.user import User
 from app.database.courses import Course
 from app.database.branches import Branch
 from app.database.divisions import Division
@@ -17,7 +17,6 @@ from app.database.timetables import Timetable
 from app.database.attendance_records import AttendanceRecord
 from app.database.qr_codes import QRCode
 from app.database.otp_code import OTPCode
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,8 +32,12 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
+
 def get_url():
     return URL
+
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -53,7 +56,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url",get_url())
+    url = config.get_main_option("sqlalchemy.url", get_url())
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -80,9 +83,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

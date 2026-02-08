@@ -14,4 +14,6 @@ class Branch(Base):
     code = Column(String(10), unique=True, nullable=False, index=True)
     branch_code = Column(String(5), unique=True, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )

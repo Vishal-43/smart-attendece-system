@@ -1,7 +1,16 @@
 from datetime import datetime, time
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Time
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Time,
+)
 
 from app.database.database import Base
 
@@ -25,7 +34,9 @@ class Timetable(Base):
     __tablename__ = "timetables"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False, index=True)
+    division_id = Column(
+        Integer, ForeignKey("divisions.id"), nullable=False, index=True
+    )
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
     subject = Column(String(100), nullable=False)
@@ -38,5 +49,6 @@ class Timetable(Base):
     academic_year = Column(String(20), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
