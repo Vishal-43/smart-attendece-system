@@ -1,10 +1,10 @@
-package com.smartattendance;
+package com.qrservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SmartattendanceApplicationTests {
+class QrserviceApplicationTests {
 
 	@Test
 	void contextLoads() {

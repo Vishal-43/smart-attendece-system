@@ -1,13 +1,13 @@
-package com.smartattendance;
+package com.qrservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SmartattendanceApplication {
+public class QrserviceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SmartattendanceApplication.class, args);
+		SpringApplication.run(QrserviceApplication.class, args);
 	}
 
 }
