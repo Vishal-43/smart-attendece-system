@@ -62,3 +62,7 @@ def get_me(current_user: User = Depends(get_current_user)):
         role=current_user.role.value,
         is_active=current_user.is_active,
     )
+
+@router.post("/is-admin")
+def is_admin(user = Depends(get_current_user)):
+    return {"is_admin": user.role.value == "admin"}
