@@ -8,6 +8,7 @@ class QRCodeBase(BaseModel):
     timetable_id: int
     code: str
     expires_at: datetime
+    timetable_id: int
 
 
 class QRCodeCreate(QRCodeBase):
@@ -19,3 +20,5 @@ class QRCodeOut(QRCodeBase):
     id: int
     created_at: Optional[datetime] = None
     used_count: int = 0
+    timetable_id: int
+

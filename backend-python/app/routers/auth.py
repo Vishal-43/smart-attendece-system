@@ -18,10 +18,10 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 @router.post("/login", response_model=AuthTokens)
 def login(credentials: AuthLoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
-    logging.warning(f" login attempt for {credentials}")
-    logging.warning(f" fetched user {user.id}", user.username, user.password_hash)
+    logging.warning(f"login attempt for {credentials}")
+    logging.warning(f"fetched user {user.id}, username={user.username}, password_hash={user.password_hash}")
     if not user or not verify_password(
-        credentials.password, user.password_hash, credentials.name
+        credentials.password, user.password_hash, credentials.username
     ):
 
         raise HTTPException(status_code=401, detail="invalid email or password")

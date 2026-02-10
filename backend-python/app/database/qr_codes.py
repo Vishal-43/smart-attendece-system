@@ -14,3 +14,4 @@ class QRCode(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used_count = Column(Integer, default=0, nullable=False)
+    timetable_id = Column(Integer, ForeignKey("timetables.id"), nullable=False)
