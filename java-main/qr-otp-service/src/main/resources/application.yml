@@ -1,0 +1,21 @@
+server:
+  port: 8001
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: qr-otp-service
+  webflux:
+    base-path: /
+
+python:
+  backend:
+    url: http://localhost:8000
+
+logging:
+  level:
+    root: INFO
+    com.smartattendance: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

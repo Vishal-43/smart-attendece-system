@@ -1,0 +1,86 @@
+# JVM
+*.class
+*.jar
+*.jar.original
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+.m2/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+*.classpath
+.project
+.settings/
+.vscode/
+.DS_Store
+
+# Build
+build/
+bin/
+dist/
+
+# Logs
+*.log
+logs/
+
+# Spring Boot
+.springBoot
+
+# Gradle
+.gradle/
+gradle/
+
+# Node (if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Test coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv

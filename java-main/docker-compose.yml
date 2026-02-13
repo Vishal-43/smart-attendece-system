@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  # Python FastAPI Backend
+  python-backend:
+    image: python:3.11-slim
+    container_name: smart-attendance-python-backend
+    working_dir: /app
+    volumes:
+      - ../backend-python:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smart_attendance
+      - REDIS_URL=redis://redis:6379
+    command: bash -c "pip install -r requirements.txt && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service (Spring Boot)
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: smart-attendance-auth-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHON_BACKEND_URL=http://python-backend:8000
+      - SPRING_APPLICATION_NAME=auth-service
+    depends_on:
+      - python-backend
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/me"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # QR/OTP Service (Spring Boot)
+  qr-otp-service:
+    build:
+      context: ./qr-otp-service
+      dockerfile: Dockerfile
+    container_name: smart-attendance-qr-otp-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHON_BACKEND_URL=http://python-backend:8000
+      - SPRING_APPLICATION_NAME=qr-otp-service
+    depends_on:
+      - python-backend
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/codes/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Attendance Service (Spring Boot)
+  attendance-service:
+    build:
+      context: ./attendance-service
+      dockerfile: Dockerfile
+    container_name: smart-attendance-attendance-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHON_BACKEND_URL=http://python-backend:8000
+      - SPRING_APPLICATION_NAME=attendance-service
+    depends_on:
+      - python-backend
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/v1/attendance/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Data Service (Spring Boot)
+  data-service:
+    build:
+      context: ./data-service
+      dockerfile: Dockerfile
+    container_name: smart-attendance-data-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHON_BACKEND_URL=http://python-backend:8000
+      - SPRING_APPLICATION_NAME=data-service
+    depends_on:
+      - python-backend
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/api/v1/batches/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: smart-attendance-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smart_attendance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smart-attendance-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - smart-attendance-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  smart-attendance-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
