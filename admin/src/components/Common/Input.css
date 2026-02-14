@@ -1,0 +1,107 @@
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-group__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--neo-light-text);
+}
+
+.input,
+.select,
+.textarea {
+  padding: var(--spacing-md);
+  border: 1px solid var(--neo-light-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--neo-light-surface);
+  color: var(--neo-light-text);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  transition: all var(--transition-base);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--neo-light-text-tertiary);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--neo-primary);
+  box-shadow: var(--neo-shadow-md), 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  background-color: var(--neo-light-surface-secondary);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error State */
+.input--error,
+.select--error,
+.textarea--error {
+  border-color: var(--neo-error);
+  box-shadow: var(--neo-shadow-sm), 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input--error:focus,
+.select--error:focus,
+.textarea--error:focus {
+  box-shadow: var(--neo-shadow-md), 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-group__error {
+  font-size: var(--text-xs);
+  color: var(--neo-error);
+  font-weight: 500;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Checkbox Styling */
+.form-group__checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.form-group__checkbox input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--neo-primary);
+}
+
+/* Input Group */
+.input-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.input-group .input {
+  flex: 1;
+}
+
+.input-group__addon {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--neo-light-surface-secondary);
+  border: 1px solid var(--neo-light-border);
+  border-radius: var(--radius-lg);
+  color: var(--neo-light-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}

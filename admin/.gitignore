@@ -1,0 +1,15 @@
+* node_modules
+*.log
+*.swp
+*.swo
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+dist/
+build/
+.vscode/settings.json
+.idea/
+*.iml
+.cache/

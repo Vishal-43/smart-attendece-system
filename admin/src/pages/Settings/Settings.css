@@ -1,0 +1,40 @@
+.settings {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings__header {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.settings__header h1 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.settings__header p {
+  margin: 0;
+  color: var(--neo-light-text-secondary);
+}
+
+.settings__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.settings__form > * {
+  max-width: 100%;
+}
+
+.settings__actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--neo-light-border);
+  justify-content: flex-end;
+}
+
+.card {
+  margin-bottom: var(--spacing-lg);
+}

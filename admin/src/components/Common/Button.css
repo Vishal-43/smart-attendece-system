@@ -1,0 +1,138 @@
+.btn {
+  font-family: var(--font-family);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  white-space: nowrap;
+}
+
+/* Size Variants */
+.btn--xs {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+}
+
+.btn--sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+.btn--md {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--text-base);
+}
+
+.btn--lg {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: var(--text-lg);
+}
+
+/* Primary Variant */
+.btn--primary {
+  background: linear-gradient(135deg, var(--neo-primary) 0%, var(--neo-primary-dark) 100%);
+  color: var(--neo-primary-text);
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-lg);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--neo-shadow-inset);
+}
+
+/* Secondary Variant */
+.btn--secondary {
+  background-color: var(--neo-light-surface);
+  color: var(--neo-light-text);
+  border: 1px solid var(--neo-light-border);
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--neo-light-surface-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-lg);
+}
+
+.btn--secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--neo-shadow-inset);
+}
+
+/* Success Variant */
+.btn--success {
+  background: linear-gradient(135deg, var(--neo-success) 0%, #059669 100%);
+  color: white;
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-lg);
+}
+
+/* Danger Variant */
+.btn--danger {
+  background: linear-gradient(135deg, var(--neo-error) 0%, #dc2626 100%);
+  color: white;
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-lg);
+}
+
+/* Warning Variant */
+.btn--warning {
+  background: linear-gradient(135deg, var(--neo-warning) 0%, #d97706 100%);
+  color: white;
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--warning:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--neo-shadow-lg);
+}
+
+/* Disabled State */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Text Only */
+.btn--text {
+  background: none;
+  box-shadow: none;
+  color: var(--neo-primary);
+  padding: var(--spacing-sm);
+}
+
+.btn--text:hover:not(:disabled) {
+  background-color: var(--neo-primary-light);
+}
+
+/* Icon Only */
+.btn--icon {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background-color: var(--neo-light-surface);
+  color: var(--neo-light-text-secondary);
+  box-shadow: var(--neo-shadow-md);
+}
+
+.btn--icon:hover:not(:disabled) {
+  color: var(--neo-primary);
+  transform: translateY(-2px);
+}
