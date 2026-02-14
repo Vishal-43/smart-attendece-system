@@ -1,3 +1,19 @@
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: smart-attendance-nginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - python-backend
+      - auth-service
+      - qr-otp-service
+      - attendance-service
+      - data-service
+    networks:
+      - smart-attendance-network
 version: '3.8'
 
 services:
