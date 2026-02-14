@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/user_service.dart';
+import '../admin/user_management_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -68,7 +69,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.people),
             label: const Text('User Management'),
             onPressed: () {
-              // TODO: Navigate to user management
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const UserManagementScreen(),
+                ),
+              );
             },
           ),
         ],

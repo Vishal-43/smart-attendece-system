@@ -1,41 +1,125 @@
-import 'package:flutter/material.dart';
 
-class UserManagementScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import '../../services/admin/admin_service.dart';
+
+class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({Key? key}) : super(key: key);
 
   @override
+  State<UserManagementScreen> createState() => _UserManagementScreenState();
+}
+
+class _UserManagementScreenState extends State<UserManagementScreen> {
+  bool _loading = true;
+  List<Map<String, dynamic>> _users = [];
+  bool _deleting = false;
+    Future<void> _deleteUser(String userId) async {
+      setState(() {
+        _deleting = true;
+        _error = null;
+      });
+      try {
+        final service = AdminService();
+        await service.deleteUser(userId);
+        await _fetchUsers();
+      } catch (e) {
+        setState(() {
+          _error = 'Failed to delete user: $e';
+        });
+      } finally {
+        setState(() {
+          _deleting = false;
+        });
+      }
+    }
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsers();
+  }
+
+  Future<void> _fetchUsers() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final service = AdminService();
+      final users = await service.fetchUsers();
+      setState(() {
+        _users = users;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to fetch users: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This is a placeholder. In a real app, fetch users from backend and display in a list.
     return Scaffold(
       appBar: AppBar(title: const Text('User Management')),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('John Doe'),
-            subtitle: const Text('Role: Student'),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                // TODO: Edit user
-              },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Jane Smith'),
-            subtitle: const Text('Role: Teacher'),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                // TODO: Edit user
-              },
-            ),
-          ),
-          // Add more users here or fetch from backend
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
+              : _users.isEmpty
+                  ? const Center(child: Text('No users found.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: _users.length,
+                      itemBuilder: (context, i) {
+                        final user = _users[i];
+                        return ListTile(
+                          leading: const Icon(Icons.person),
+                          title: Text(user['username'] ?? user['email'] ?? 'Unknown'),
+                          subtitle: Text('Role: ${user['role'] ?? 'N/A'}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () {
+                                  // TODO: Edit user
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: _deleting
+                                    ? null
+                                    : () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Delete User'),
+                                            content: const Text('Are you sure you want to delete this user?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          await _deleteUser(user['id'].toString());
+                                        }
+                                      },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // TODO: Add new user
@@ -43,6 +127,9 @@ class UserManagementScreen extends StatelessWidget {
         child: const Icon(Icons.add),
         tooltip: 'Add User',
       ),
+      bottomNavigationBar: _deleting
+          ? const LinearProgressIndicator(minHeight: 3)
+          : null,
     );
   }
 }

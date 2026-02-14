@@ -1,5 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
+import math
+def is_within_geofence(user_lat, user_lon, target_lat, target_lon, radius_m=100):
+    # Haversine formula
+    R = 6371000  # Earth radius in meters
+    phi1 = math.radians(user_lat)
+    phi2 = math.radians(target_lat)
+    delta_phi = math.radians(target_lat - user_lat)
+    delta_lambda = math.radians(target_lon - user_lon)
+    a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+    return distance <= radius_m
+
+@router.post("/verify/geofencing")
+async def verify_geofencing(request: Request):
+    data = await request.json()
+    user_lat = data.get("latitude")
+    user_lon = data.get("longitude")
+    # Example: Replace with real location from DB or config
+    target_lat, target_lon = 12.9716, 77.5946
+    if user_lat is None or user_lon is None:
+        return JSONResponse(status_code=400, content={"message": "Missing latitude or longitude"})
+    if is_within_geofence(user_lat, user_lon, target_lat, target_lon):
+        return {"message": "Geofencing verification successful."}
+    return JSONResponse(status_code=403, content={"message": "Outside allowed geofence."})
+
+@router.post("/verify/accesspoint")
+async def verify_access_point(request: Request):
+    data = await request.json()
+    ssid = data.get("ssid")
+    bssid = data.get("bssid")
+    # Example: Replace with real allowed SSID/BSSID from DB or config
+    allowed_ssid = "ExampleSSID"
+    allowed_bssid = "00:11:22:33:44:55"
+    if ssid == allowed_ssid and bssid == allowed_bssid:
+        return {"message": "Access point verification successful."}
+    return JSONResponse(status_code=403, content={"message": "Access point not allowed."})
 from app.core.dependencies import get_db, require_admin
 from app.schemas.attendance_records import (
     AttendanceRecordCreate,
