@@ -1,7 +1,0 @@
-export { default as Button } from './Button'
-export { default as Card, CardHeader, CardBody, CardFooter } from './Card'
-export { default as Input, Select, Textarea } from './Input'
-export { default as Table } from './Table'
-export { default as Modal } from './Modal'
-export { default as Loading, Spinner } from './Loading'
-export { default as Alert } from './Alert'
