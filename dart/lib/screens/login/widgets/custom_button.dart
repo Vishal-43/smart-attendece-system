@@ -9,7 +9,7 @@ class CustomButton extends StatelessWidget {
   final Widget? image;
   final VoidCallback onPressed;
 
-  const CustomButton({
+  const CustomButton({super.key, 
     required this.color,
     required this.textColor,
     required this.text,

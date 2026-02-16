@@ -7,7 +7,7 @@ from app.schemas.auth import (
     TokenRefreshRequest,
     UserPublic,
 )
-from app.security.token import create_access_token, create_refresh_token, decode_token
+from app.security.jwt_token import create_access_token, create_refresh_token
 from app.security.password import verify_password
 from app.database.user import User
 import logging

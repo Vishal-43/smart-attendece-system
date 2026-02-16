@@ -17,7 +17,13 @@ class AdminService {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return List<Map<String, dynamic>>.from(data['users'] ?? []);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(data);
+      }
+      if (data is Map && data['users'] is List) {
+        return List<Map<String, dynamic>>.from(data['users']);
+      }
+      throw Exception('Unexpected response format: ${response.body}');
     }
     throw Exception('Failed to fetch users: ${response.body}');
   }

@@ -4,7 +4,7 @@ import '../../services/qr_otp/qr_otp_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QrOtpScreen extends StatefulWidget {
-  const QrOtpScreen({Key? key}) : super(key: key);
+  const QrOtpScreen({super.key});
 
   @override
   State<QrOtpScreen> createState() => _QrOtpScreenState();

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_verification_service.dart';
 
 class AttendanceVerificationScreen extends StatefulWidget {
-  const AttendanceVerificationScreen({Key? key}) : super(key: key);
+  const AttendanceVerificationScreen({super.key});
 
   @override
   State<AttendanceVerificationScreen> createState() => _AttendanceVerificationScreenState();

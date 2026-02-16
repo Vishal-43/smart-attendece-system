@@ -10,7 +10,7 @@ import '../../../services/auth_service.dart';
 class LoginForm extends StatefulWidget {
   final Animation<double> animation;
 
-  const LoginForm({
+  const LoginForm({super.key, 
     required this.animation,
   });
 

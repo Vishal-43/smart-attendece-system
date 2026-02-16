@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
 import math
+
+router = APIRouter(prefix="/api/v1/attendance", tags=["Attendance Records"])
 def is_within_geofence(user_lat, user_lon, target_lat, target_lon, radius_m=100):
     # Haversine formula
     R = 6371000  # Earth radius in meters

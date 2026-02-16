@@ -1,10 +1,6 @@
 import os
-from dotenv import load_dotenv
 from jose import jwt
 from datetime import datetime, timedelta
-
-load_dotenv()
-
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
@@ -18,10 +14,11 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 
+# Add create_refresh_token function
 def create_refresh_token(data: dict) -> str:
     to_encode = data.copy()
     exp_min = datetime.utcnow() + timedelta(
-        minutes=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES"))
+        days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
     )
     to_encode.update({"exp": exp_min})
     encoded_jwt = jwt.encode(
@@ -30,13 +27,14 @@ def create_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 
+from jose import jwt, JWTError
 def decode_token(token: str) -> dict:
     try:
-        decode_token = jwt.decode(
-            token=token,
-            key=os.getenv("JWT_SECRET"),
+        payload = jwt.decode(
+            token,
+            os.getenv("JWT_SECRET"),
             algorithms=[os.getenv("JWT_ALGORITHM")],
         )
-        return decode_token
-    except jwt.JWTError as e:
-        raise Exception(f"Token is invalid: {str(e)}")
+        return payload
+    except JWTError:
+        raise Exception("Token is invalid or expired")

@@ -8,7 +8,7 @@ class CustomInputField extends StatelessWidget {
   final bool obscureText;
   final TextEditingController? controller;
 
-  const CustomInputField({
+  const CustomInputField({super.key, 
     required this.label,
     required this.prefixIcon,
     this.obscureText = false,

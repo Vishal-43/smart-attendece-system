@@ -3,7 +3,7 @@ import '../../services/attendance/attendance_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AttendanceRecordsScreen extends StatefulWidget {
-  const AttendanceRecordsScreen({Key? key}) : super(key: key);
+  const AttendanceRecordsScreen({super.key});
 
   @override
   State<AttendanceRecordsScreen> createState() => _AttendanceRecordsScreenState();

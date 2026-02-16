@@ -7,7 +7,7 @@ import 'fade_slide_transition.dart';
 class Header extends StatelessWidget {
   final Animation<double> animation;
 
-  const Header({
+  const Header({super.key, 
     required this.animation,
   });
 

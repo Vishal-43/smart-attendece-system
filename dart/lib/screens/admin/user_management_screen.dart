@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin/admin_service.dart';
 
 class UserManagementScreen extends StatefulWidget {
-  const UserManagementScreen({Key? key}) : super(key: key);
+  const UserManagementScreen({super.key});
 
   @override
   State<UserManagementScreen> createState() => _UserManagementScreenState();
@@ -124,8 +124,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         onPressed: () {
           // TODO: Add new user
         },
-        child: const Icon(Icons.add),
         tooltip: 'Add User',
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: _deleting
           ? const LinearProgressIndicator(minHeight: 3)

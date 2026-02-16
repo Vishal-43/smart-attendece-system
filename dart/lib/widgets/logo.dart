@@ -6,7 +6,7 @@ class Logo extends StatelessWidget {
   final Color color;
   final double size;
 
-  const Logo({required this.color, required this.size});
+  const Logo({super.key, required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
