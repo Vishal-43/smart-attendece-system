@@ -65,12 +65,12 @@ def update_user(
     db: Session = Depends(get_db),
     curr_user=Depends(get_current_user),
 ):
-    db_user = db.query(User).filter(User.id == user_id)
+    db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "ADMIN" or curr_user.id != user_id:
+    if curr_user.role.value != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
