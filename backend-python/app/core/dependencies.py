@@ -22,6 +22,7 @@ def get_db() -> Generator[Session, None, None]:
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
+    print(f"[get_current_user] token: {token}")
     try:
         payload = decode_token(token)
         user_id: str = payload.get("sub")
@@ -39,6 +40,7 @@ def get_current_user(
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    print(f"[require_admin] user: {current_user.username}, role: {current_user.role.value}")
     if current_user.role.value != "admin":
         raise HTTPException(status_code=403, detail="admin access required")
     return current_user

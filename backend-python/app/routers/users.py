@@ -1,9 +1,12 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_admin
 from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.database.user import User
 from app.security.password import hash_password
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -33,6 +36,8 @@ def get_user(
 
 @router.post("/", response_model=UserOut, dependencies=[Depends(require_admin)])
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    logger.warning(f"Creating user with: {user}")
+    print(f"[CREATE USER] Received: {user.dict()}")
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(
@@ -70,6 +75,7 @@ def update_user(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
+    print(f"[UPDATE USER] user_id={user_id}, data={user_in.dict()}")
     for var, value in vars(user_in).items():
         if value is not None:
             if var == "password":

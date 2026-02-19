@@ -21,7 +21,7 @@ def verify_password(password: str, hashed_password: str, user: str) -> str:
 
 if __name__ == "__main__":
     plain_password = "123456789"
-    user = "admin"
+    user = "student1"
     hashed = hash_password(plain_password, user)
     print(
         "hashed password:", hashed, "\n", verify_password(plain_password, hashed, user)

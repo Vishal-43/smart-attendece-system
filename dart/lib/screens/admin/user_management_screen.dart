@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import '../../services/admin/admin_service.dart';
+import 'user_edit_screen.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -84,8 +85,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () {
-                                  // TODO: Edit user
+                                onPressed: () async {
+                                  final updated = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => UserEditScreen(user: user),
+                                    ),
+                                  );
+                                  if (updated == true) {
+                                    await _fetchUsers();
+                                  }
                                 },
                               ),
                               IconButton(
@@ -121,8 +130,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       },
                     ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Add new user
+        onPressed: () async {
+          final created = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserEditScreen(),
+            ),
+          );
+          if (created == true) {
+            await _fetchUsers();
+          }
         },
         tooltip: 'Add User',
         child: const Icon(Icons.add),

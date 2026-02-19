@@ -38,6 +38,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   dio: ^5.9.1
 
+  # For device location and WiFi info
+  geolocator: ^14.0.2
+  network_info_plus: ^7.0.0
+  permission_handler: ^12.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

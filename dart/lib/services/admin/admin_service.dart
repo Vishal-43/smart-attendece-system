@@ -41,4 +41,42 @@ class AdminService {
       throw Exception('Failed to delete user: ${response.body}');
     }
   }
+
+  Future<void> createUser(Map<String, dynamic> userData) async {
+    print('Sending createUser: ' + userData.toString());
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    print('JWT token being sent: ' + (token ?? 'NULL'));
+    final response = await http.post(
+      Uri.parse("$_baseUrl/"),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(userData),
+    );
+    print('createUser response: ' + response.statusCode.toString() + ' ' + response.body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to create user: ${response.body}');
+    }
+  }
+
+  Future<void> updateUser(String userId, Map<String, dynamic> userData) async {
+    print('Sending updateUser: ' + userData.toString());
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    print('JWT token being sent: ' + (token ?? 'NULL'));
+    final response = await http.put(
+      Uri.parse('$_baseUrl/$userId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(userData),
+    );
+    print('updateUser response: ' + response.statusCode.toString() + ' ' + response.body);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update user: ${response.body}');
+    }
+  }
 }
