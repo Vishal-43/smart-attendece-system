@@ -4,8 +4,7 @@
   justify-content: center;
   min-height: 100vh;
 
-  /* background image */
-  background-image: url("/backgrounds/login-template.jpg"); /* placeholder path */
+  background-image: url("/backgrounds/login-template.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -13,17 +12,25 @@
   padding: var(--spacing-lg);
 }
 
+/* EXACT CARD COLOR FROM IMAGE */
 .auth-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
 
-  background: rgba(17, 25, 40, 0.78);
-  backdrop-filter: blur(16px);
+  /* base black */
+  background: radial-gradient(
+      circle at 50% 30%,
+      rgba(37, 99, 235, 0.12),
+      rgba(37, 99, 235, 0.04) 35%,
+      rgba(11, 15, 20, 0.98) 70%
+    ),
+    #0b0f14;
 
-  border-radius: 14px;
+  border-radius: 18px;
+
   border: 1px solid rgba(255,255,255,0.08);
 
-  padding: 28px;
+  padding: 32px 28px;
 }
 
 .auth-header {
@@ -32,118 +39,81 @@
 }
 
 .auth-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin-bottom: 6px;
+  color: #e6edf3;
 }
 
 .auth-subtitle {
-  font-size: 13px;
-  color: #9ca3af;
+  color: #9da7b3;
 }
 
+/* EXACT INPUT COLOR */
 .auth-card input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
 
-  background: rgba(2, 6, 23, 0.65);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #030712;
 
-  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+
   color: #e5e7eb;
+  font-size: 15px;
+}
 
-  outline: none;
-  transition: 0.2s;
+.auth-card input::placeholder {
+  color: #8b949e;
 }
 
 .auth-card input:focus {
   border-color: #2563eb;
 }
 
+/* EXACT BUTTON */
 .neo-button-primary {
   width: 100%;
-  padding: 12px;
+  height: 48px;                 /* exact height */
+  padding: 0 16px;              /* no vertical padding */
 
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;          /* match screenshot rounding */
+  border: none;                 /* remove border shadow illusion */
 
-  background: linear-gradient(180deg, #2563eb, #1d4ed8);
-  color: white;
+  background: linear-gradient(
+    180deg,
+    #2563eb 0%,
+    #1d4ed8 100%
+  );
 
+  color: #ffffff;
+  font-size: 16px;
   font-weight: 600;
+
   cursor: pointer;
-  transition: 0.2s;
+
+  box-shadow: none;             /* remove shadow */
+  filter: none;                 /* ensure no glow */
 }
 
 .neo-button-primary:hover {
-  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  background: linear-gradient(
+    180deg,
+    #3b82f6 0%,
+    #2563eb 100%
+  );
+
+  transform: none;              /* remove lift effect */
+  box-shadow: none;             /* ensure no shadow */
 }
 
+/* EXACT LINK COLOR */
 .auth-link,
 .auth-link-bold {
   color: #60a5fa;
   font-size: 13px;
+  text-decoration: none;
 }
 
 .auth-link:hover,
 .auth-link-bold:hover {
   color: #93c5fd;
-} 
-
-
-/* .auth-alert {
-  margin-bottom: var(--spacing-lg);
 }
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-.auth-options {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.auth-link {
-  color: var(--neo-primary);
-  font-size: var(--text-sm);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color var(--transition-base);
-}
-
-.auth-link:hover {
-  color: var(--neo-primary-dark);
-}
-
-.auth-link-bold {
-  color: var(--neo-primary);
-  font-weight: 700;
-  text-decoration: none;
-  transition: color var(--transition-base);
-}
-
-.auth-link-bold:hover {
-  color: var(--neo-primary-dark);
-}
-
-.auth-footer {
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--neo-light-text-secondary);
-  margin: 0;
-}
-
-@media (max-width: 480px) {
-  .auth-card {
-    padding: var(--spacing-lg);
-  }
-
-  .auth-title {
-    font-size: var(--text-2xl);
-  }
-} */
