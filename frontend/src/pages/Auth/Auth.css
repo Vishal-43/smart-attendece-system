@@ -3,39 +3,96 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--neo-light-bg) 0%, var(--neo-light-surface) 100%);
+
+  /* background image */
+  background-image: url("/backgrounds/login-template.jpg"); /* placeholder path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
   padding: var(--spacing-lg);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
-  background: var(--neo-light-surface);
-  border-radius: var(--radius-2xl);
-  border: 1px solid var(--neo-light-border);
-  box-shadow: var(--neo-shadow-xl);
-  padding: var(--spacing-2xl);
+  max-width: 400px;
+
+  background: rgba(17, 25, 40, 0.78);
+  backdrop-filter: blur(16px);
+
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+
+  padding: 28px;
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: 22px;
 }
 
 .auth-title {
-  font-size: var(--text-3xl);
-  font-weight: 700;
-  color: var(--neo-primary);
-  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin-bottom: 6px;
 }
 
 .auth-subtitle {
-  font-size: var(--text-sm);
-  color: var(--neo-light-text-secondary);
-  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
 }
 
-.auth-alert {
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  border-radius: 8px;
+  color: #e5e7eb;
+
+  outline: none;
+  transition: 0.2s;
+}
+
+.auth-card input:focus {
+  border-color: #2563eb;
+}
+
+.neo-button-primary {
+  width: 100%;
+  padding: 12px;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+
+  background: linear-gradient(180deg, #2563eb, #1d4ed8);
+  color: white;
+
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.neo-button-primary:hover {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+
+.auth-link,
+.auth-link-bold {
+  color: #60a5fa;
+  font-size: 13px;
+}
+
+.auth-link:hover,
+.auth-link-bold:hover {
+  color: #93c5fd;
+} 
+
+
+/* .auth-alert {
   margin-bottom: var(--spacing-lg);
 }
 
@@ -89,4 +146,4 @@
   .auth-title {
     font-size: var(--text-2xl);
   }
-}
+} */
