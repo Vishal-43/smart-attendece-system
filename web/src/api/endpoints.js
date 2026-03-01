@@ -3,21 +3,21 @@ import apiClient from './client'
 // Authentication Endpoints
 export const authAPI = {
   register: (data) => apiClient.post('/auth/register', data),
-  login: (email, password) => apiClient.post('/auth/login', { email, password }),
+  login: (username, password) => apiClient.post('/auth/login', { username, password }),
   logout: () => apiClient.post('/auth/logout'),
-  refreshToken: (refreshToken) => apiClient.post('/auth/refresh-token', { refresh_token: refreshToken }),
+  refreshToken: (refreshToken) => apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
   forgotPassword: (email) => apiClient.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) =>
     apiClient.post('/auth/reset-password', { token, new_password: newPassword }),
+  getMe: () => apiClient.get('/auth/me'),
+  isAdmin: () => apiClient.post('/auth/is-admin'),
 }
 
 // Users Endpoints
 export const usersAPI = {
-  getMe: () => apiClient.get('/users/me'),
-  updateMe: (data) => apiClient.put('/users/me', data),
+  listUsers: (params) => apiClient.get('/users/', { params }),
   getUser: (id) => apiClient.get(`/users/${id}`),
-  listUsers: (params) => apiClient.get('/users', { params }),
-  createUser: (data) => apiClient.post('/users', data),
+  createUser: (data) => apiClient.post('/users/', data),
   updateUser: (id, data) => apiClient.put(`/users/${id}`, data),
   deleteUser: (id) => apiClient.delete(`/users/${id}`),
 }
@@ -96,21 +96,24 @@ export const enrollmentsAPI = {
 // Attendance Endpoints
 export const attendanceAPI = {
   markAttendance: (data) => apiClient.post('/attendance/mark', data),
-  getMyRecords: (params) => apiClient.get('/attendance/my-records', { params }),
-  getRecords: (params) => apiClient.get('/attendance/records', { params }),
-  getAnalytics: (params) => apiClient.get('/attendance/analytics', { params }),
+  getHistory: (userId, params) => apiClient.get(`/attendance/history/${userId}`, { params }),
+  getSession: (timetableId, params) => apiClient.get(`/attendance/session/${timetableId}`, { params }),
+  updateStatus: (attendanceId, data) => apiClient.put(`/attendance/${attendanceId}`, data),
+  listAll: (params) => apiClient.get('/attendance/', { params }),
 }
 
 // QR Code Endpoints
 export const qrAPI = {
-  getCurrent: (locationId) => apiClient.get(`/qr/current/${locationId}`),
-  verify: (data) => apiClient.post('/qr/verify', data),
+  generate: (timetableId, params) => apiClient.post(`/qr/generate/${timetableId}`, null, { params }),
+  getCurrent: (timetableId, params) => apiClient.get(`/qr/current/${timetableId}`, { params }),
+  refresh: (timetableId) => apiClient.post(`/qr/refresh/${timetableId}`),
 }
 
 // OTP Endpoints
 export const otpAPI = {
-  request: (locationId) => apiClient.get(`/otp/request/${locationId}`),
-  verify: (data) => apiClient.post('/otp/verify', data),
+  generate: (timetableId, params) => apiClient.post(`/otp/generate/${timetableId}`, null, { params }),
+  getCurrent: (timetableId) => apiClient.get(`/otp/current/${timetableId}`),
+  refresh: (timetableId) => apiClient.post(`/otp/refresh/${timetableId}`),
 }
 
 // Access Points Endpoints
@@ -123,9 +126,8 @@ export const accessPointsAPI = {
 
 // Reports Endpoints
 export const reportsAPI = {
-  getAttendanceReport: (params) => apiClient.get('/reports/attendance', { params }),
+  getAttendanceSummary: (params) => apiClient.get('/reports/attendance-summary', { params }),
   getStudentReport: (studentId) => apiClient.get(`/reports/student/${studentId}`),
-  getClassReport: (classId) => apiClient.get(`/reports/class/${classId}`),
+  getClassReport: (timetableId, params) => apiClient.get(`/reports/class/${timetableId}`, { params }),
   exportCSV: (params) => apiClient.get('/reports/export/csv', { params, responseType: 'blob' }),
-  exportPDF: (params) => apiClient.get('/reports/export/pdf', { params, responseType: 'blob' }),
 }

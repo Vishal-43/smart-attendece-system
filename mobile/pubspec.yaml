@@ -43,6 +43,12 @@ dependencies:
   network_info_plus: ^7.0.0
   permission_handler: ^12.0.1
 
+  # QR code scanner
+  mobile_scanner: ^6.0.2
+
+  # QR code generation (for teacher view)
+  qr_flutter: ^4.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -53,6 +59,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  
+  # Testing
+  mocktail: ^1.0.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

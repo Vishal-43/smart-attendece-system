@@ -25,6 +25,7 @@ export function Select({
   label,
   error,
   options = [],
+  children,
   disabled = false,
   className,
   ...props
@@ -37,12 +38,16 @@ export function Select({
         disabled={disabled}
         {...props}
       >
-        <option value="">Select an option</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
+        {children || (
+          <>
+            <option value="">Select an option</option>
+            {options.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </>
+        )}
       </select>
       {error && <span className="form-group__error">{error}</span>}
     </div>

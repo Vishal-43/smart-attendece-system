@@ -22,6 +22,7 @@ import CoursesPage from './pages/Management/CoursesPage'
 import BranchesPage from './pages/Management/BranchesPage'
 import BatchesPage from './pages/Management/BatchesPage'
 import EnrollmentsPage from './pages/Management/EnrollmentsPage'
+import QrOtpManagement from './pages/Management/QrOtpManagement'
 
 // Reports
 import AttendanceReportsPage from './pages/Reports/AttendanceReportsPage'
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/management/branches" element={<BranchesPage />} />
           <Route path="/management/batches" element={<BatchesPage />} />
           <Route path="/management/enrollments" element={<EnrollmentsPage />} />
+          <Route path="/management/qr-otp" element={<QrOtpManagement />} />
 
           {/* Reports Routes */}
           <Route path="/reports/attendance" element={<AttendanceReportsPage />} />

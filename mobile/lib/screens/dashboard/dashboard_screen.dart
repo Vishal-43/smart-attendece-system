@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/user_service.dart';
 import '../admin/user_management_screen.dart';
+import '../qr_otp/teacher_qr_otp_management_screen.dart';
+import '../attendance/student_select_session_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -52,17 +54,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: const Icon(Icons.qr_code),
-            label: const Text('Manage QR Codes'),
+            label: const Text('Manage QR Codes & OTPs'),
             onPressed: () {
-              // Navigation to QR code management pending implementation
-            },
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.password),
-            label: const Text('Manage OTPs'),
-            onPressed: () {
-              // Navigation to OTP management pending implementation
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TeacherQrOtpManagementScreen(),
+                ),
+              );
             },
           ),
           const SizedBox(height: 24),
@@ -86,10 +84,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text('Welcome, Teacher!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Mark Attendance (QR/OTP)'),
+            icon: const Icon(Icons.qr_code),
+            label: const Text('Generate QR Code / OTP'),
             onPressed: () {
-              // Navigation to attendance screen pending implementation
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TeacherQrOtpManagementScreen(),
+                ),
+              );
             },
           ),
           const SizedBox(height: 24),
@@ -97,23 +99,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.history),
             label: const Text('View Attendance Records'),
             onPressed: () {
-              // Navigation to attendance records screen pending implementation
-            },
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.qr_code),
-            label: const Text('Generate/Verify QR Code'),
-            onPressed: () {
-              // Navigation to QR code screen pending implementation
-            },
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.password),
-            label: const Text('Generate/Verify OTP'),
-            onPressed: () {
-              // Navigation to OTP screen pending implementation
+              Navigator.pushNamed(
+                context,
+                '/attendance-history',
+                arguments: {'userId': 0}, // 0 means show all for teacher
+              );
             },
           ),
         ],
@@ -128,15 +118,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Mark Attendance (QR/OTP)'),
             onPressed: () {
-              // Navigation to attendance screen pending implementation
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const StudentSelectSessionScreen(),
+                ),
+              );
             },
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: const Icon(Icons.history),
             label: const Text('View Attendance Records'),
-            onPressed: () {
-              // Navigation to attendance records screen pending implementation
+            onPressed: () async {
+              // Get current user ID from SharedPreferences or UserService
+              final prefs = await SharedPreferences.getInstance();
+              // Assuming user_id is stored during login
+              final userId = prefs.getInt('user_id') ?? 0;
+              if (mounted) {
+                Navigator.pushNamed(
+                  context,
+                  '/attendance-history',
+                  arguments: {'userId': userId},
+                );
+              }
             },
           ),
         ],

@@ -52,3 +52,23 @@ def require_student(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role.value not in ["student", "admin"]:
         raise HTTPException(status_code=403, detail="Student access required")
     return current_user
+
+
+def require_role(*allowed_roles: str):
+    """
+    Factory function to create a dependency that requires one of the specified roles.
+    
+    Args:
+        *allowed_roles: Variable length argument list of allowed role values
+        
+    Returns:
+        A dependency function that checks if the current user has one of the allowed roles
+    """
+    def check_role(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role.value not in allowed_roles:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"One of {allowed_roles} access required"
+            )
+        return current_user
+    return check_role

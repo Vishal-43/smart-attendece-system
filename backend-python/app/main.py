@@ -27,6 +27,7 @@ from app.routers import (
     divisions,
     enrollments,
     locations,
+    reports,
     timetable,
     users,
 )
@@ -75,6 +76,7 @@ app.include_router(courses.router)
 app.include_router(divisions.router)
 app.include_router(enrollments.router)
 app.include_router(locations.router)
+app.include_router(reports.router)
 app.include_router(timetable.router)
 app.include_router(users.router)
 

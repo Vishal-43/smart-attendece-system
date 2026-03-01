@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 // Auth Hooks
 export const useLogin = () => {
   return useMutation({
-    mutationFn: ({ email, password }) => api.authAPI.login(email, password),
+    mutationFn: ({ username, password }) => api.authAPI.login(username, password),
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Login failed')
     },
@@ -35,7 +35,7 @@ export const useLogout = () => {
 export const useCurrentUser = () => {
   return useQuery({
     queryKey: ['user', 'me'],
-    queryFn: () => api.usersAPI.getMe(),
+    queryFn: () => api.authAPI.getMe(),
     retry: 1,
   })
 }
@@ -355,6 +355,170 @@ export const useCreateEnrollment = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Failed to create enrollment')
+    },
+  })
+}
+// Reports Hooks
+export const useAttendanceSummary = (params = {}) => {
+  return useQuery({
+    queryKey: ['reports', 'attendance-summary', params],
+    queryFn: () => api.reportsAPI.getAttendanceSummary(params),
+  })
+}
+
+export const useStudentReport = (studentId) => {
+  return useQuery({
+    queryKey: ['reports', 'student', studentId],
+    queryFn: () => api.reportsAPI.getStudentReport(studentId),
+    enabled: !!studentId,
+  })
+}
+
+export const useClassReport = (timetableId, params = {}) => {
+  return useQuery({
+    queryKey: ['reports', 'class', timetableId, params],
+    queryFn: () => api.reportsAPI.getClassReport(timetableId, params),
+    enabled: !!timetableId,
+  })
+}
+
+export const useExportCSV = () => {
+  return useMutation({
+    mutationFn: (params) => api.reportsAPI.exportCSV(params),
+    onSuccess: (response) => {
+      // Create download link for CSV blob
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `attendance_report_${new Date().toISOString().split('T')[0]}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      toast.success('Report exported successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to export report')
+    },
+  })
+}
+
+// QR Code Hooks
+export const useGenerateQR = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ timetableId, ttl_minutes = 10 }) => api.qrAPI.generate(timetableId, { ttl_minutes }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['qr', variables.timetableId] })
+      toast.success('QR Code generated successfully')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to generate QR code')
+    },
+  })
+}
+
+export const useCurrentQR = (timetableId, withImage = true) => {
+  return useQuery({
+    queryKey: ['qr', timetableId],
+    queryFn: () => api.qrAPI.getCurrent(timetableId, { with_image: withImage }),
+    enabled: !!timetableId,
+    retry: false,
+  })
+}
+
+export const useRefreshQR = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (timetableId) => api.qrAPI.refresh(timetableId),
+    onSuccess: (_, timetableId) => {
+      queryClient.invalidateQueries({ queryKey: ['qr', timetableId] })
+      toast.success('QR Code refreshed')
+    },
+    onError: (error) => {
+      toast.error('Failed to refresh QR code')
+    },
+  })
+}
+
+// OTP Hooks
+export const useGenerateOTP = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ timetableId, ttl_minutes = 5 }) => api.otpAPI.generate(timetableId, { ttl_minutes }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['otp', variables.timetableId] })
+      toast.success('OTP generated successfully')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to generate OTP')
+    },
+  })
+}
+
+export const useCurrentOTP = (timetableId) => {
+  return useQuery({
+    queryKey: ['otp', timetableId],
+    queryFn: () => api.otpAPI.getCurrent(timetableId),
+    enabled: !!timetableId,
+    retry: false,
+  })
+}
+
+export const useRefreshOTP = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (timetableId) => api.otpAPI.refresh(timetableId),
+    onSuccess: (_, timetableId) => {
+      queryClient.invalidateQueries({ queryKey: ['otp', timetableId] })
+      toast.success('OTP refreshed')
+    },
+    onError: (error) => {
+      toast.error('Failed to refresh OTP')
+    },
+  })
+}
+
+// Attendance Marking Hooks
+export const useMarkAttendance = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data) => api.attendanceAPI.markAttendance(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] })
+      toast.success('Attendance marked successfully')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to mark attendance')
+    },
+  })
+}
+
+export const useAttendanceHistory = (userId, params = {}) => {
+  return useQuery({
+    queryKey: ['attendance', 'history', userId, params],
+    queryFn: () => api.attendanceAPI.getHistory(userId, params),
+    enabled: !!userId,
+  })
+}
+
+export const useSessionAttendance = (timetableId, params = {}) => {
+  return useQuery({
+    queryKey: ['attendance', 'session', timetableId, params],
+    queryFn: () => api.attendanceAPI.getSession(timetableId, params),
+    enabled: !!timetableId,
+  })
+}
+
+export const useUpdateAttendanceStatus = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ attendanceId, status }) => api.attendanceAPI.updateStatus(attendanceId, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] })
+      toast.success('Attendance status updated')
+    },
+    onError: (error) => {
+      toast.error('Failed to update attendance status')
     },
   })
 }
