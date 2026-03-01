@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Card, CardBody, Button } from '../components/common'
+import { Card, CardBody, Button } from '../components/Common'
 import { AlertCircle } from 'lucide-react'
 import './NotFoundPage.css'
 

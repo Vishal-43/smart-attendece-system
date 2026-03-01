@@ -7,10 +7,12 @@ from app.schemas.auth import (
     TokenRefreshRequest,
     UserPublic,
 )
-from app.security.jwt_token import create_access_token, create_refresh_token
+from app.security.jwt_token import create_access_token, create_refresh_token, decode_token
 from app.security.password import verify_password
 from app.database.user import User
 import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -18,15 +20,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 @router.post("/login", response_model=AuthTokens)
 def login(credentials: AuthLoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
-    logging.warning(f"login attempt for {credentials}")
-    logging.warning(f"fetched user {user.id}, username={user.username}, password_hash={user.password_hash}")
     if not user or not verify_password(
         credentials.password, user.password_hash, credentials.username
     ):
-
-        raise HTTPException(status_code=401, detail="invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="inactive user")
+        raise HTTPException(status_code=403, detail="Inactive user")
 
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
@@ -40,17 +39,18 @@ def refresh_token(request: TokenRefreshRequest, db: Session = Depends(get_db)):
         payload = decode_token(request.refresh_token)
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="invalid refresh token")
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
     except Exception:
-        raise HTTPException(status_code=401, detail="invalid or expired refresh token")
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user or not user.is_active:
-        raise HTTPException(status_code=403, detail="user not found or inactive user")
-    access_token = create_access_token({"sub": str(user.id)})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
+        raise HTTPException(status_code=403, detail="User not found or inactive")
 
-    return AuthTokens(access_token=access_token, refresh_token=refresh_token)
+    access_token = create_access_token({"sub": str(user.id)})
+    new_refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    return AuthTokens(access_token=access_token, refresh_token=new_refresh_token)
 
 
 @router.get("/me", response_model=UserPublic)
@@ -63,6 +63,7 @@ def get_me(current_user: User = Depends(get_current_user)):
         is_active=current_user.is_active,
     )
 
+
 @router.post("/is-admin")
-def is_admin(user = Depends(get_current_user)):
+def is_admin(user=Depends(get_current_user)):
     return {"is_admin": user.role.value == "admin"}

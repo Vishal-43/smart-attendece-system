@@ -9,56 +9,46 @@ router = APIRouter(prefix="/api/v1/branches", tags=["branches"])
 
 @router.get("/", response_model=list[BranchOut])
 def list_all_branches(db: Session = Depends(get_db)):
-    branches = db.query(Branch).all()
-    return branches
+    return db.query(Branch).all()
 
 
-@router.get("/course_id:{course_id}", response_model=list[BranchOut])
-def list_branches_by_Course(Course_id: int, db: Session = Depends(get_db)):
-    branches = db.query(Branch).filter(Branch.course_id == Course_id).all()
-    if not branches:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"for {Course_id} No branches Found",
-        )
-    return branches
+@router.get("/course/{course_id}", response_model=list[BranchOut])
+def list_branches_by_course(course_id: int, db: Session = Depends(get_db)):
+    return db.query(Branch).filter(Branch.course_id == course_id).all()
 
 
-@router.get("/branch_id:{branch_id}", response_model=BranchOut)
-def get_branch_by_id(branch_id: int, db: Session = Depends(get_db)):
+@router.get("/{branch_id}", response_model=BranchOut)
+def get_branch(branch_id: int, db: Session = Depends(get_db)):
     branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not branch:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="branch not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Branch not found"
         )
     return branch
 
 
 @router.post("/", response_model=BranchOut, dependencies=[Depends(require_admin)])
-def create_branch(branch: BranchCreate, db: Session = Depends(get_db)):
-    db_branch = db.query(Branch).filter(Branch.code == branch.code).first()
-    if db_branch:
+def create_branch(branch_in: BranchCreate, db: Session = Depends(get_db)):
+    if db.query(Branch).filter(Branch.code == branch_in.code).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="branch code already exists"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Branch code already exists",
         )
-
-    db_branch = db.query(Branch).filter(Branch.name == branch.name).first()
-    if db_branch:
+    if db.query(Branch).filter(Branch.name == branch_in.name).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Branch name already Exists"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Branch name already exists",
         )
-
-    branch = Branch(
-        course_id=branch.course_id,
-        name=branch.name,
-        code=branch.code,
-        branch_code=branch.branch_code,
+    new_branch = Branch(
+        course_id=branch_in.course_id,
+        name=branch_in.name,
+        code=branch_in.code,
+        branch_code=branch_in.branch_code,
     )
-
-    db.add(branch)
+    db.add(new_branch)
     db.commit()
-    db.refresh(branch)
-    return branch
+    db.refresh(new_branch)
+    return new_branch
 
 
 @router.put(
@@ -73,44 +63,41 @@ def update_branch(
             status_code=status.HTTP_404_NOT_FOUND, detail="Branch not found"
         )
     if branch_in.code:
-        db_branch = (
+        conflict = (
             db.query(Branch)
             .filter(Branch.code == branch_in.code, Branch.id != branch_id)
             .first()
         )
-        if db_branch:
+        if conflict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Branch code already exists",
             )
-        if branch_in.name:
-            db_branch = (
-                db.query(Branch)
-                .filter(Branch.name == branch_in.name, Branch.id != branch_id)
-                .first()
+    if branch_in.name:
+        conflict = (
+            db.query(Branch)
+            .filter(Branch.name == branch_in.name, Branch.id != branch_id)
+            .first()
+        )
+        if conflict:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Branch name already exists",
             )
-            if db_branch:
-                db_branch = (
-                    db.query(Branch)
-                    .filter(Branch.name == branch_in.name, Branch.id != branch_id)
-                    .first()
-                )
-                if db_branch:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Branch name aready exists",
-                    )
 
-    for var, value in vars(branch_in).items():
-        if value is not None:
-            setattr(db_branch, var, value)
-
+    update_data = branch_in.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_branch, key, value)
     db.commit()
     db.refresh(db_branch)
     return db_branch
 
 
-@router.delete("/{branch_id}", dependencies=[Depends(require_admin)])
+@router.delete(
+    "/{branch_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_branch(branch_id: int, db: Session = Depends(get_db)):
     db_branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not db_branch:

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, attendance, batches, branches, codes, courses, divisions, locations, timetable, users, enrollments
 
 app = FastAPI(
-    title="smart Attendance System",
+    title="Smart Attendance System",
     description="Attendance Tracking with QR codes",
     version="1.0.0",
 )

@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 venv/
+.venv/
 env/
 *.egg-info/
 dist/
@@ -18,12 +19,6 @@ target/
 .mvn/
 mvnw
 mvnw.cmd
-
-# Haskell
-.stack-work/
-*.hi
-*.o
-dist-newstyle/
 
 # Node/React
 node_modules/
@@ -64,5 +59,3 @@ docker-compose.override.yml
 *.tmp
 .cache/
 cred.txt
-
-java-party

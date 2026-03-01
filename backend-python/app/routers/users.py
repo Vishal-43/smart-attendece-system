@@ -13,8 +13,7 @@ router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 @router.get("/", response_model=list[UserOut], dependencies=[Depends(require_admin)])
 def list_users(db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return users
+    return db.query(User).all()
 
 
 @router.get("/{user_id}", response_model=UserOut)
@@ -26,7 +25,7 @@ def get_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "ADMIN" or curr_user.id != user_id:
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user",
@@ -35,22 +34,20 @@ def get_user(
 
 
 @router.post("/", response_model=UserOut, dependencies=[Depends(require_admin)])
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    logger.warning(f"Creating user with: {user}")
-    print(f"[CREATE USER] Received: {user.dict()}")
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
+def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.email == user_in.email).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email Already registered"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
         )
     new_user = User(
-        email=user.email,
-        username=user.username,
-        password_hash=hash_password(user.password, user.username),
-        first_name=user.first_name,
-        last_name=user.last_name,
-        phone=user.phone,
-        role=user.role,
+        email=user_in.email,
+        username=user_in.username,
+        password_hash=hash_password(user_in.password, user_in.username),
+        first_name=user_in.first_name,
+        last_name=user_in.last_name,
+        phone=user_in.phone,
+        role=user_in.role,
     )
     db.add(new_user)
     db.commit()
@@ -70,18 +67,17 @@ def update_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "admin":
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
-    print(f"[UPDATE USER] user_id={user_id}, data={user_in.dict()}")
-    for var, value in vars(user_in).items():
-        if value is not None:
-            if var == "password":
-                db_user.password_hash = hash_password(value, db_user.username)
-            else:
-                setattr(db_user, var, value)
+    update_data = user_in.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        if key == "password":
+            db_user.password_hash = hash_password(value, db_user.username)
+        else:
+            setattr(db_user, key, value)
 
     db.commit()
     db.refresh(db_user)
@@ -97,7 +93,7 @@ def delete_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "ADMIN" or curr_user.id != user_id:
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )

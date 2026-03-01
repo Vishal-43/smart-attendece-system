@@ -9,8 +9,7 @@ router = APIRouter(prefix="/api/v1/courses", tags=["courses"])
 
 @router.get("/", response_model=list[CourseOut])
 def list_courses(db: Session = Depends(get_db)):
-    CourseOut = db.query(Course).all()
-    return CourseOut
+    return db.query(Course).all()
 
 
 @router.get("/{course_id}", response_model=CourseOut)
@@ -18,38 +17,35 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="course not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Course not found"
         )
-
     return course
 
 
-@router.post("/", response_model=CourseCreate, dependencies=[Depends(require_admin)])
-def create_course(course: CourseCreate, db: Session = Depends(get_db)):
-    db_course = db.query(Course).filter(Course.code == course.code).first()
-    if db_course:
+@router.post("/", response_model=CourseOut, dependencies=[Depends(require_admin)])
+def create_course(course_in: CourseCreate, db: Session = Depends(get_db)):
+    if db.query(Course).filter(Course.code == course_in.code).first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Course code already exists"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Course code already exists",
+        )
+    if db.query(Course).filter(Course.name == course_in.name).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Course name already exists",
         )
 
-    db_course = db.query(Course).filter(Course.name == course.name).first()
-    if db_course:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Course Name already exists"
-        )
-
-    course = Course(
-        name=Course.name,
-        code=Course.code,
-        duration_years=Course.duration_years,
-        total_semesters=Course.total_semesters,
-        collage_code=Course.college_code,
+    new_course = Course(
+        name=course_in.name,
+        code=course_in.code,
+        duration_years=course_in.duration_years,
+        total_semesters=course_in.total_semesters,
+        college_code=course_in.college_code,
     )
-
-    db.add(course)
+    db.add(new_course)
     db.commit()
-    db.refresh(course)
-    return course
+    db.refresh(new_course)
+    return new_course
 
 
 @router.put(
@@ -58,37 +54,37 @@ def create_course(course: CourseCreate, db: Session = Depends(get_db)):
 def update_course(
     course_id: int, course_in: CourseUpdate, db: Session = Depends(get_db)
 ):
-    db_course = db.query(Course).filter(course_id != Course.id).first()
+    db_course = db.query(Course).filter(Course.id == course_id).first()
     if not db_course:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="course Not Found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Course not found"
         )
     if course_in.code:
-        db_course = (
+        conflict = (
             db.query(Course)
             .filter(Course.code == course_in.code, Course.id != course_id)
             .first()
         )
-        if db_course:
+        if conflict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="course code already Exists",
+                detail="Course code already exists",
             )
     if course_in.name:
-        db_course = (
+        conflict = (
             db.query(Course)
             .filter(Course.name == course_in.name, Course.id != course_id)
             .first()
         )
-        if db_course:
+        if conflict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="course name already exists",
+                detail="Course name already exists",
             )
 
-    for var, value in vars(course_in).items():
-        if value is not None:
-            setattr(db_course, var, value)
+    update_data = course_in.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_course, key, value)
     db.commit()
     db.refresh(db_course)
     return db_course
@@ -99,11 +95,11 @@ def update_course(
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(require_admin)],
 )
-def delete_course(Course_id: int, db: Session = Depends(get_db)):
-    db_Course = db.query(Course).filter(Course.id == Course_id).first()
-    if not db_Course:
+def delete_course(course_id: int, db: Session = Depends(get_db)):
+    db_course = db.query(Course).filter(Course.id == course_id).first()
+    if not db_course:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Course Not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Course not found"
         )
-    db.delete(db_Course)
+    db.delete(db_course)
     db.commit()
