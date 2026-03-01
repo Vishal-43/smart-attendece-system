@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: smartattendance_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smartattendance_user
+      POSTGRES_PASSWORD: smartattendance_pass
+      POSTGRES_DB: smartattendance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartattendance_user -d smartattendance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend-python
+      dockerfile: Dockerfile
+    container_name: smartattendance_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://smartattendance_user:smartattendance_pass@db:5432/smartattendance
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this-in-production-minimum-32-characters}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://web:3000
+      ENVIRONMENT: development
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend-python:/app
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: smartattendance_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+
+volumes:
+  postgres_data:
+    driver: local

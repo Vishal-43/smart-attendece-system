@@ -43,7 +43,7 @@ class Header extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall!
-                  .copyWith(color: kBlack.withOpacity(0.5)),
+                  .copyWith(color: kBlack.withValues(alpha: 0.5)),
             ),
           ),
         ],

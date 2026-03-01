@@ -30,9 +30,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _logout(BuildContext context) async {
+    final navigator = Navigator.of(context);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
-    Navigator.of(context).pushReplacementNamed('/');
+    navigator.pushReplacementNamed('/');
   }
 
   @override
@@ -53,7 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.qr_code),
             label: const Text('Manage QR Codes'),
             onPressed: () {
-              // TODO: Navigate to QR code management
+              // Navigation to QR code management pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -61,7 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.password),
             label: const Text('Manage OTPs'),
             onPressed: () {
-              // TODO: Navigate to OTP management
+              // Navigation to OTP management pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -88,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Mark Attendance (QR/OTP)'),
             onPressed: () {
-              // TODO: Navigate to attendance screen
+              // Navigation to attendance screen pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -96,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.history),
             label: const Text('View Attendance Records'),
             onPressed: () {
-              // TODO: Navigate to attendance records screen
+              // Navigation to attendance records screen pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -104,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.qr_code),
             label: const Text('Generate/Verify QR Code'),
             onPressed: () {
-              // TODO: Navigate to QR code screen
+              // Navigation to QR code screen pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -112,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.password),
             label: const Text('Generate/Verify OTP'),
             onPressed: () {
-              // TODO: Navigate to OTP screen
+              // Navigation to OTP screen pending implementation
             },
           ),
         ],
@@ -127,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Mark Attendance (QR/OTP)'),
             onPressed: () {
-              // TODO: Navigate to attendance screen
+              // Navigation to attendance screen pending implementation
             },
           ),
           const SizedBox(height: 24),
@@ -135,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.history),
             label: const Text('View Attendance Records'),
             onPressed: () {
-              // TODO: Navigate to attendance records screen
+              // Navigation to attendance records screen pending implementation
             },
           ),
         ],

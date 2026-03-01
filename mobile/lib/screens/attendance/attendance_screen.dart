@@ -25,6 +25,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       setState(() => _result = 'User not logged in.');
       return;
     }
+    if (!mounted) return;
     final controller = TextEditingController();
     final code = await showDialog<String>(
       context: context,
@@ -47,6 +48,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
     );
     if (code == null || code.isEmpty) return;
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _result = null;

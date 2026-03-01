@@ -3,7 +3,7 @@ import '../../services/admin/admin_service.dart';
 
 class UserEditScreen extends StatefulWidget {
   final Map<String, dynamic>? user;
-  const UserEditScreen({Key? key, this.user}) : super(key: key);
+  const UserEditScreen({super.key, this.user});
 
   @override
   State<UserEditScreen> createState() => _UserEditScreenState();
@@ -69,6 +69,7 @@ class _UserEditScreenState extends State<UserEditScreen> {
       } else {
         await service.updateUser(widget.user!['id'].toString(), userData);
       }
+      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       setState(() { _error = 'Failed to save user: $e'; });
@@ -121,7 +122,7 @@ class _UserEditScreenState extends State<UserEditScreen> {
                 decoration: const InputDecoration(labelText: 'Phone'),
               ),
               DropdownButtonFormField<String>(
-                value: _role,
+                initialValue: _role,
                 items: const [
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                   DropdownMenuItem(value: 'teacher', child: Text('Teacher')),

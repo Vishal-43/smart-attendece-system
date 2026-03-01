@@ -19,7 +19,7 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       _result = null;
     });
     try {
-      // TODO: Replace with real location fetching
+      // Placeholder coordinates until location services are integrated
       double latitude = 12.9716; // Example: get from location plugin
       double longitude = 77.5946;
       final service = AttendanceVerificationService();
@@ -44,7 +44,7 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       _result = null;
     });
     try {
-      // TODO: Replace with real WiFi info fetching
+      // Placeholder WiFi metadata until platform services are wired up
       String ssid = 'ExampleSSID'; // Example: get from wifi plugin
       String bssid = '00:11:22:33:44:55';
       final service = AttendanceVerificationService();
