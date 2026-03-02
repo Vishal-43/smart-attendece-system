@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/qr_otp/qr_otp_service.dart';
+import '../../utils/error_handler.dart';
 
 class TeacherQrOtpManagementScreen extends StatefulWidget {
   const TeacherQrOtpManagementScreen({super.key});
@@ -75,10 +76,14 @@ class _TeacherQrOtpManagementScreenState
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load timetables: $e';
+        _errorMessage = _formatErrorMessage(e);
         _loading = false;
       });
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    return ErrorHandler.formatError(error);
   }
 
   Future<void> _generateQR() async {

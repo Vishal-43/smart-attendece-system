@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
@@ -71,10 +72,27 @@ async def unauthorized_handler(request: Request, exc: UnauthorizedError) -> JSON
     )
 
 
-async def validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+def _to_json_safe(value: Any) -> Any:
+    return jsonable_encoder(
+        value,
+        custom_encoder={
+            Exception: lambda err: str(err),
+        },
+    )
+
+
+async def validation_handler(
+    request: Request, exc: RequestValidationError | ValidationError
+) -> JSONResponse:
+    if isinstance(exc, ValidationError):
+        return JSONResponse(
+            status_code=422,
+            content=error_response(exc.message, data=_to_json_safe(exc.data)),
+        )
+
     return JSONResponse(
         status_code=422,
-        content=error_response("Validation failed.", data=exc.errors()),
+        content=error_response("Validation failed.", data=_to_json_safe(exc.errors())),
     )
 
 
