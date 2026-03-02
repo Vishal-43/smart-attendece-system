@@ -7,7 +7,7 @@ import useToast from '../../hooks/useToast';
 import Card from '../../components/Common/Card';
 import Button from '../../components/Common/Button';
 import Loading from '../../components/Common/Loading';
-import Select from '../../components/Common/Select';
+import { Select } from '../../components/Common/Input';
 
 export default function QrOtpManagement() {
   const [activeTab, setActiveTab] = useState('qr');
