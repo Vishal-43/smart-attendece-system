@@ -81,7 +81,7 @@ export default function LoginPage() {
 
           <Button
             variant="primary"
-            size="lg"
+            
             type="submit"
             disabled={loginMutation.isPending}
             style={{ width: '100%' }}

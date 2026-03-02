@@ -74,12 +74,12 @@
   display: block !important;
 
   width: 100% !important;
-  height: 38px !important;
+  height: 28px !important;
 
   padding: 0 12px !important;
   margin: 0 !important;
 
-  line-height: 38px !important;   /* critical for vertical centering */
+  line-height: 28px !important;   /* critical for vertical centering */
 
   font-size: 14px !important;
   font-weight: 600 !important;
