@@ -4,7 +4,7 @@
   justify-content: center;
   min-height: 100vh;
 
-  background-image: url("/backgrounds/login-template.jpg");
+  background-image: url("backgrounds/auth-background.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

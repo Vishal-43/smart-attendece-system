@@ -109,7 +109,7 @@ body {
   justify-content: center;
   min-height: 100vh;
 
-  background-image: url("/backgrounds/login-template.jpg");
+  background-image: url("/backgrounds/auth-background.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -121,7 +121,7 @@ body {
   width: 100%;
   max-width: 400px;
 
-  background: #000000;   /* solid black, no opacity */
+  background: #121212;   /* solid black, no opacity */
 
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
