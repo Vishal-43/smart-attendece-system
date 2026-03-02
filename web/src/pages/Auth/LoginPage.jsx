@@ -89,13 +89,6 @@ export default function LoginPage() {
             {loginMutation.isPending ? 'Logging in...' : 'Login'}
           </Button>
         </form>
-
-        <p className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/auth/register" className="auth-link-bold">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   )
