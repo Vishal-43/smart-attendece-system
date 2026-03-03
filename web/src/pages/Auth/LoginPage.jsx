@@ -90,12 +90,12 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="auth-footer">
+        {/* <p className="auth-footer">
           Don't have an account?{' '}
           <Link to="/auth/register" className="auth-link-bold">
             Sign up
           </Link>
-        </p>
+        </p> */}
       </div>
     </div>
   )
