@@ -3,7 +3,7 @@ import apiClient from './client'
 // Authentication Endpoints
 export const authAPI = {
   register: (data) => apiClient.post('/auth/register', data),
-  login: (username, password) => apiClient.post('/auth/login', { username, password }),
+  login: (credentials) => apiClient.post('/auth/login', credentials),
   logout: () => apiClient.post('/auth/logout'),
   refreshToken: (refreshToken) => apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
   forgotPassword: (email) => apiClient.post('/auth/forgot-password', { email }),

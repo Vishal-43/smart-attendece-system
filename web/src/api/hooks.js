@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 // Auth Hooks
 export const useLogin = () => {
   return useMutation({
-    mutationFn: ({ username, password }) => api.authAPI.login(username, password),
+    mutationFn: (credentials) => api.authAPI.login(credentials),
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Login failed')
     },

@@ -1,31 +1,39 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dio_client.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://localhost:8000/api/v1/auth'; 
-
   Future<bool> login(String email, String password, String username) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'username': username,
-      }),
-    );
+    try {
+      final dio = await DioClient.getInstance();
+      final response = await dio.post(
+        '/auth/login',
+        data: {
+          'email': email,
+          'password': password,
+          'username': username,
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final token = data['access_token'];
-      if (token != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt_token', token);
-        return true;
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final token = data['access_token'];
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('jwt_token', token);
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      // Handle timeout and connection errors gracefully
+      if (e.toString().contains('timeout') || 
+          e.toString().contains('Connection refused')) {
+        throw Exception('Server is not responding. Make sure backend is running on port 8000.');
+      }
+      rethrow;
     }
-    return false;
   }
 
   Future<String?> getToken() async {

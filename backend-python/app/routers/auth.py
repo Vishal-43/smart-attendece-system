@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
 from app.schemas.auth import (
     AuthLoginRequest,
+    AuthLoginResponse,
     AuthTokens,
     TokenRefreshRequest,
     UserPublic,
@@ -17,20 +18,35 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=AuthTokens)
+@router.post("/login", response_model=AuthLoginResponse)
 def login(credentials: AuthLoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == credentials.email).first()
+    user = None
+    if credentials.email:
+        user = db.query(User).filter(User.email == credentials.email).first()
+    elif credentials.username:
+        user = db.query(User).filter(User.username == credentials.username).first()
+
     if not user or not verify_password(
-        credentials.password, user.password_hash, credentials.username
+        credentials.password, user.password_hash, user.username
     ):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Inactive user")
 
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
 
-    return AuthTokens(access_token=access_token, refresh_token=refresh_token)
+    return AuthLoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserPublic(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            role=user.role.value,
+            is_active=user.is_active,
+        ),
+    )
 
 
 @router.post("/refresh", response_model=AuthTokens)

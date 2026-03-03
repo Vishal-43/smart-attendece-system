@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../../services/qr_otp/qr_otp_service.dart';
+import '../../utils/error_handler.dart';
 import 'student_mark_attendance_screen.dart';
 
 class StudentSelectSessionScreen extends StatefulWidget {
@@ -41,10 +42,14 @@ class _StudentSelectSessionScreenState
       });
     } catch (e) {
       setState(() {
-        _error = 'Failed to load sessions: $e';
+        _error = _formatErrorMessage(e);
         _loading = false;
       });
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    return ErrorHandler.formatError(error);
   }
 
   void _selectSession(int timetableId) {
