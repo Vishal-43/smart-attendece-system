@@ -73,11 +73,11 @@ export default function LoginPage() {
             required
           />
 
-          <div className="auth-options">
+          {/* <div className="auth-options">
             <Link to="/auth/forgot-password" className="auth-link">
               Forgot password?
             </Link>
-          </div>
+          </div> */}
 
           <Button
             variant="primary"
