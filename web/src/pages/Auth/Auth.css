@@ -61,6 +61,10 @@
   font-size: 15px;
 }
 
+.auth-card input[type="password"] {
+  margin-bottom: 28px !important;
+}
+
 .auth-card input::placeholder {
   color: #8b949e;
 }
@@ -88,6 +92,14 @@
   border: none;
 
   box-shadow: none !important;
+}
+
+.auth-card .btn {
+  width: 100%;
+  padding: 14px 16px !important;
+  font-size: 15px !important;
+  margin-bottom: 8px;
+
 }
 
 .neo-button-primary:hover {

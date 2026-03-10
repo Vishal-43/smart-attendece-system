@@ -73,15 +73,15 @@ export default function LoginPage() {
             required
           />
 
-          <div className="auth-options">
+          {/* <div className="auth-options">
             <Link to="/auth/forgot-password" className="auth-link">
               Forgot password?
             </Link>
-          </div>
+          </div> */}
 
           <Button
             variant="primary"
-            
+            size="lg"
             type="submit"
             disabled={loginMutation.isPending}
             style={{ width: '100%' }}
@@ -89,6 +89,13 @@ export default function LoginPage() {
             {loginMutation.isPending ? 'Logging in...' : 'Login'}
           </Button>
         </form>
+
+        {/* <p className="auth-footer">
+          Don't have an account?{' '}
+          <Link to="/auth/register" className="auth-link-bold">
+            Sign up
+          </Link>
+        </p> */}
       </div>
     </div>
   )
