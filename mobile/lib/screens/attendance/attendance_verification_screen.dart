@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_verification_service.dart';
+import '../../services/location_service.dart';
+import '../../services/wifi_service.dart';
 
 class AttendanceVerificationScreen extends StatefulWidget {
   const AttendanceVerificationScreen({super.key});
@@ -12,6 +14,8 @@ class AttendanceVerificationScreen extends StatefulWidget {
 class _AttendanceVerificationScreenState extends State<AttendanceVerificationScreen> {
   bool _loading = false;
   String? _result;
+  final LocationService _locationService = LocationService();
+  final WifiService _wifiService = WifiService();
 
   Future<void> _verifyGeofencing() async {
     setState(() {
@@ -19,11 +23,19 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       _result = null;
     });
     try {
-      // Placeholder coordinates until location services are integrated
-      double latitude = 12.9716; // Example: get from location plugin
-      double longitude = 77.5946;
+      final position = await _locationService.getCurrentLocation();
+      if (position == null) {
+        setState(() {
+          _result = 'Unable to fetch live GPS coordinates. Please enable location permissions.';
+        });
+        return;
+      }
+
       final service = AttendanceVerificationService();
-      final message = await service.verifyGeofencing(latitude: latitude, longitude: longitude);
+      final message = await service.verifyGeofencing(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
       setState(() {
         _result = message;
       });
@@ -44,9 +56,15 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       _result = null;
     });
     try {
-      // Placeholder WiFi metadata until platform services are wired up
-      String ssid = 'ExampleSSID'; // Example: get from wifi plugin
-      String bssid = '00:11:22:33:44:55';
+      final ssid = await _wifiService.getWifiSSID();
+      final bssid = await _wifiService.getWifiBSSID();
+      if (ssid == null || bssid == null) {
+        setState(() {
+          _result = 'Unable to read WiFi metadata. Ensure WiFi is enabled and permissions are granted.';
+        });
+        return;
+      }
+
       final service = AttendanceVerificationService();
       final message = await service.verifyAccessPoint(ssid: ssid, bssid: bssid);
       setState(() {

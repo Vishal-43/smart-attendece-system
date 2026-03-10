@@ -2,9 +2,10 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_admin
+from app.schemas.auth import PasswordChangeRequest
 from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.database.user import User
-from app.security.password import hash_password
+from app.security.password import hash_password, verify_password
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,29 @@ def update_user(
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+@router.put("/{user_id}/password")
+def update_user_password(
+    user_id: int,
+    payload: PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    curr_user=Depends(get_current_user),
+):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    if not verify_password(payload.old_password, db_user.password_hash, db_user.username):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
+
+    db_user.password_hash = hash_password(payload.new_password, db_user.username)
+    db.commit()
+
+    return {"success": True, "message": "Password updated successfully"}
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

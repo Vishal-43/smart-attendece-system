@@ -34,7 +34,7 @@ def create_location(location_in: LocationCreate, db: Session = Depends(get_db)):
         latitude=location_in.latitude,
         longitude=location_in.longitude,
         radius=location_in.radius,
-        room_no=location_in.room_no,
+        room_no=location_in.address or location_in.room_no,
         floor=location_in.floor,
         room_type=location_in.room_type,
         capacity=location_in.capacity,
@@ -57,6 +57,10 @@ def update_location(
             status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
         )
     update_data = location_in.model_dump(exclude_unset=True)
+    address = update_data.pop("address", None)
+    if address is not None:
+        update_data["room_no"] = address
+
     for key, value in update_data.items():
         setattr(db_location, key, value)
     db.commit()

@@ -1,0 +1,31 @@
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.glass-badge--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #065f46;
+}
+
+.glass-badge--inactive {
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+}
+
+.glass-badge--pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #92400e;
+}
+
+.glass-badge--default {
+  background: rgba(99, 102, 241, 0.12);
+  color: #3730a3;
+}

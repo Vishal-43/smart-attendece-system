@@ -37,12 +37,18 @@ import ProfilePage from './pages/Settings/ProfilePage'
 // 404
 import NotFoundPage from './pages/NotFoundPage'
 
+// Showcase (development only)
+import GlassUIShowcase from './pages/GlassUIShowcase'
+
 export default function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return (
     <BrowserRouter>
       <Routes>
+        {/* Showcase Route (development/demo) */}
+        <Route path="/showcase" element={<GlassUIShowcase />} />
+
         {/* Auth Routes */}
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />

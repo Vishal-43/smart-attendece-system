@@ -1,17 +1,29 @@
-import { useAttendanceSummary } from '../../api/hooks'
+import { useEffect, useState } from 'react'
+import { getDashboardStats } from '../../api/services'
 import { Card, CardHeader, CardBody, Loading } from '../../components/Common'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import './Dashboard.css'
 
 export default function DashboardPage() {
-  // Get attendance summary data
-  const { data: summaryData, isLoading } = useAttendanceSummary({})
+  const [summary, setSummary] = useState({})
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getDashboardStats()
+        setSummary(data?.data || data || {})
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
 
   if (isLoading) {
     return <Loading />
   }
-
-  const summary = summaryData?.data?.data || summaryData?.data || {}
   
   const COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b']
 
@@ -25,16 +37,12 @@ export default function DashboardPage() {
     { name: 'Late', value: summary.late || 0 },
   ].filter(item => item.value > 0)
 
-  // Mock trend data (in production, you'd fetch last 7 days data)
-  const attendanceData = [
-    { date: 'Mon', count: Math.floor(summary.present * 0.9) },
-    { date: 'Tue', count: Math.floor(summary.present * 0.95) },
-    { date: 'Wed', count: Math.floor(summary.present * 0.87) },
-    { date: 'Thu', count: Math.floor(summary.present * 0.92) },
-    { date: 'Fri', count: Math.floor(summary.present * 0.98) },
-    { date: 'Sat', count: summary.present },
-    { date: 'Sun', count: 0 },
-  ]
+  const attendanceData = Array.isArray(summary.trend)
+    ? summary.trend.map((item) => ({
+        date: item.date?.slice(5) || item.date,
+        count: item.count,
+      }))
+    : []
 
   return (
     <div className="dashboard">

@@ -8,7 +8,6 @@ class DioClient {
   // Physical devices use actual backend IP
   // iOS emulator uses localhost:8000
   static const String _localBackendUrl = 'http://10.0.2.2:8000/api/v1';
-  static const String _productionBackendUrl = 'http://localhost:8000/api/v1';
 
   /// Returns a Dio instance with a fresh auth token on every call.
   /// The base Dio is cached, but the token is read fresh from SharedPreferences.
@@ -39,7 +38,7 @@ class DioClient {
     // Try to use environment variable if available
     // Build with: flutter run --dart-define=API_BASE_URL=http://your-backend:8000/api/v1
     const String? envUrl = String.fromEnvironment('API_BASE_URL');
-    if (envUrl != null && envUrl.isNotEmpty) {
+    if (envUrl.isNotEmpty) {
       return envUrl;
     }
     

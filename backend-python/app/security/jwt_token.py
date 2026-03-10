@@ -2,6 +2,17 @@ import os
 from jose import jwt
 from datetime import datetime, timedelta
 
+
+def _secret_key() -> str:
+    key = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET")
+    if not key:
+        raise ValueError("SECRET_KEY is not configured")
+    return key
+
+
+def _algorithm() -> str:
+    return os.getenv("ALGORITHM") or os.getenv("JWT_ALGORITHM", "HS256")
+
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     exp_min = datetime.utcnow() + timedelta(
@@ -9,7 +20,7 @@ def create_access_token(data: dict) -> str:
     )
     to_encode.update({"exp": exp_min})
     encoded_jwt = jwt.encode(
-        to_encode, os.getenv("JWT_SECRET"), algorithm=os.getenv("JWT_ALGORITHM")
+        to_encode, _secret_key(), algorithm=_algorithm()
     )
     return encoded_jwt
 
@@ -22,7 +33,7 @@ def create_refresh_token(data: dict) -> str:
     )
     to_encode.update({"exp": exp_min})
     encoded_jwt = jwt.encode(
-        to_encode, os.getenv("JWT_SECRET"), algorithm=os.getenv("JWT_ALGORITHM")
+        to_encode, _secret_key(), algorithm=_algorithm()
     )
     return encoded_jwt
 
@@ -32,8 +43,8 @@ def decode_token(token: str) -> dict:
     try:
         payload = jwt.decode(
             token,
-            os.getenv("JWT_SECRET"),
-            algorithms=[os.getenv("JWT_ALGORITHM")],
+            _secret_key(),
+            algorithms=[_algorithm()],
         )
         return payload
     except JWTError:

@@ -1,7 +1,9 @@
 .header {
-  background: linear-gradient(135deg, var(--neo-light-surface) 0%, var(--neo-light-surface-secondary) 100%);
-  border-bottom: 1px solid var(--neo-light-border);
-  box-shadow: var(--neo-shadow-sm);
+  background: var(--glass-panel-bg);
+  border-bottom: 1px solid var(--glass-panel-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-panel-shadow);
   padding: var(--spacing-md) var(--spacing-lg);
   position: sticky;
   top: 0;
@@ -23,7 +25,7 @@
 .header__title {
   font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--neo-primary);
+  color: var(--glass-text-primary);
   margin: 0;
 }
 
@@ -34,9 +36,9 @@
 }
 
 .header__icon-btn {
-  background: none;
-  border: none;
-  color: var(--neo-light-text-secondary);
+  background: var(--glass-panel-bg);
+  border: 1px solid var(--glass-panel-border);
+  color: var(--glass-text-secondary);
   cursor: pointer;
   padding: var(--spacing-sm);
   display: flex;
@@ -47,8 +49,8 @@
 }
 
 .header__icon-btn:hover {
-  color: var(--neo-primary);
-  background-color: rgba(79, 70, 229, 0.1);
+  color: var(--glass-accent);
+  background-color: var(--glass-hover-bg);
 }
 
 .header__user-menu {
@@ -59,13 +61,13 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background: var(--neo-light-surface);
-  border: 1px solid var(--neo-light-border);
+  background: var(--glass-panel-bg);
+  border: 1px solid var(--glass-panel-border);
   border-radius: var(--radius-full);
   padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
   transition: all var(--transition-base);
-  box-shadow: var(--neo-shadow-sm);
+  box-shadow: var(--glass-panel-shadow);
 }
 
 .header__user-btn:hover {
@@ -77,7 +79,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--neo-primary) 0%, var(--neo-secondary) 100%);
+  background: linear-gradient(135deg, var(--glass-accent) 0%, #22d3ee 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -88,7 +90,7 @@
 
 .header__user-name {
   font-size: var(--text-sm);
-  color: var(--neo-light-text);
+  color: var(--glass-text-primary);
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -98,10 +100,12 @@
   position: absolute;
   top: 100%;
   right: 0;
-  background: var(--neo-light-surface);
-  border: 1px solid var(--neo-light-border);
+  background: var(--glass-panel-bg);
+  border: 1px solid var(--glass-panel-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-lg);
-  box-shadow: var(--neo-shadow-lg);
+  box-shadow: var(--glass-panel-shadow);
   min-width: 180px;
   margin-top: var(--spacing-sm);
   overflow: hidden;
@@ -128,7 +132,7 @@
   padding: var(--spacing-md) var(--spacing-lg);
   background: none;
   border: none;
-  color: var(--neo-light-text);
+  color: var(--glass-text-primary);
   cursor: pointer;
   font-size: var(--text-sm);
   transition: all var(--transition-base);
@@ -136,8 +140,8 @@
 }
 
 .header__dropdown-item:hover {
-  background-color: var(--neo-light-surface-secondary);
-  color: var(--neo-primary);
+  background-color: var(--glass-hover-bg);
+  color: var(--glass-accent);
 }
 
 .header__dropdown-item--danger:hover {
@@ -147,7 +151,7 @@
 
 .header__dropdown-separator {
   height: 1px;
-  background-color: var(--neo-light-border);
+  background-color: var(--glass-panel-border);
 }
 
 @media (max-width: 768px) {

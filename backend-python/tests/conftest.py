@@ -2,7 +2,7 @@
 # Test configuration and fixtures for the Smart Attendance System
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,7 +17,7 @@ from app.database.branches import Branch
 from app.database.divisions import Division
 from app.database.batches import Batch
 from app.database.locations import Location
-from app.database.timetables import Timetable
+from app.database.timetables import DayOfWeek, LectureType, Timetable
 from app.database.student_enrollments import StudentEnrollment
 from app.database.qr_codes import QRCode
 from app.database.otp_code import OTPCode
@@ -214,15 +214,18 @@ def location(db):
 @pytest.fixture
 def timetable(db, teacher_user, division, location):
     """Create a test timetable."""
-    timetable_obj = TimeTable(
+    timetable_obj = Timetable(
         subject="Data Structures",
         teacher_id=teacher_user.id,
         division_id=division.id,
         location_id=location.id,
-        day_of_week="Monday",
-        start_time="09:00",
-        end_time="10:30",
-        is_active=True
+        lecture_type=LectureType.THEORY,
+        day_of_week=DayOfWeek.MON,
+        start_time=time(9, 0),
+        end_time=time(10, 30),
+        semester=1,
+        academic_year="2025-2026",
+        is_active=True,
     )
     db.add(timetable_obj)
     db.commit()

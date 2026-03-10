@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +26,7 @@ from app.routers import (
     branches,
     codes,
     courses,
+    dashboard,
     divisions,
     enrollments,
     locations,
@@ -39,12 +42,18 @@ app = FastAPI(
     version="2.0.0",
 )
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+    if origin.strip()
+]
+
 # ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,6 +82,7 @@ app.include_router(batches.router)
 app.include_router(branches.router)
 app.include_router(codes.router)
 app.include_router(courses.router)
+app.include_router(dashboard.router)
 app.include_router(divisions.router)
 app.include_router(enrollments.router)
 app.include_router(locations.router)

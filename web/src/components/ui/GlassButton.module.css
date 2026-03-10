@@ -1,0 +1,204 @@
+.glass-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border: 1px solid;
+  border-radius: var(--glass-radius-md);
+  cursor: pointer;
+  transition: var(--glass-transition);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.glass-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--glass-accent-light);
+}
+
+.glass-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary variant */
+.glass-button--primary {
+  background: var(--glass-accent);
+  border-color: var(--glass-accent);
+  color: white;
+}
+
+.glass-button--primary:hover:not(:disabled) {
+  background: var(--glass-accent-hover);
+  border-color: var(--glass-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.glass-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary variant */
+.glass-button--secondary {
+  background: var(--glass-panel-bg);
+  border-color: var(--glass-panel-border);
+  color: var(--glass-text-primary);
+}
+
+.glass-button--secondary:hover:not(:disabled) {
+  background: var(--glass-hover-bg);
+  border-color: var(--glass-accent);
+}
+
+/* Outline variant */
+.glass-button--outline {
+  background: transparent;
+  border-color: var(--glass-accent);
+  color: var(--glass-accent);
+}
+
+.glass-button--outline:hover:not(:disabled) {
+  background: var(--glass-accent-light);
+  border-color: var(--glass-accent-hover);
+}
+
+/* Ghost variant */
+.glass-button--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--glass-text-secondary);
+}
+
+.glass-button--ghost:hover:not(:disabled) {
+  background: var(--glass-hover-bg);
+  color: var(--glass-text-primary);
+}
+
+/* Danger variant */
+.glass-button--danger {
+  background: var(--glass-error);
+  border-color: var(--glass-error);
+  color: white;
+}
+
+.glass-button--danger:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Success variant */
+.glass-button--success {
+  background: var(--glass-success);
+  border-color: var(--glass-success);
+  color: white;
+}
+
+.glass-button--success:hover:not(:disabled) {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Size variants */
+.glass-button--xs {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  border-radius: var(--glass-radius-sm);
+}
+
+.glass-button--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* md is default, defined in .glass-button base */
+
+.glass-button--lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+.glass-button--xl {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+/* Full width */
+.glass-button--full-width {
+  width: 100%;
+}
+
+/* Icon only */
+.glass-button--icon-only {
+  padding: 0.625rem;
+  aspect-ratio: 1;
+}
+
+/* Loading state */
+.glass-button--loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.glass-button--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Button group */
+.glass-button-group {
+  display: inline-flex;
+  gap: var(--spacing-xs);
+}
+
+.glass-button-group--attached {
+  gap: 0;
+}
+
+.glass-button-group--attached .glass-button {
+  border-radius: 0;
+}
+
+.glass-button-group--attached .glass-button:first-child {
+  border-top-left-radius: var(--glass-radius-md);
+  border-bottom-left-radius: var(--glass-radius-md);
+}
+
+.glass-button-group--attached .glass-button:last-child {
+  border-top-right-radius: var(--glass-radius-md);
+  border-bottom-right-radius: var(--glass-radius-md);
+}
+
+.glass-button-group--attached .glass-button:not(:last-child) {
+  border-right-width: 0;
+}

@@ -1,3 +1,6 @@
+version: '3.8'
+
+services:
   # Nginx Reverse Proxy
   nginx:
     image: nginx:1.25-alpine
@@ -14,9 +17,7 @@
       - data-service
     networks:
       - smart-attendance-network
-version: '3.8'
 
-services:
   # Python FastAPI Backend
   python-backend:
     image: python:3.11-slim
@@ -29,6 +30,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smart_attendance
       - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
     command: bash -c "pip install -r requirements.txt && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       - postgres
@@ -48,16 +51,17 @@ services:
       dockerfile: Dockerfile
     container_name: smart-attendance-auth-service
     ports:
-      - "8000:8000"
+      - "8081:8081"
     environment:
       - PYTHON_BACKEND_URL=http://python-backend:8000
       - SPRING_APPLICATION_NAME=auth-service
+      - SERVER_PORT=8081
     depends_on:
       - python-backend
     networks:
       - smart-attendance-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/auth/me"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/auth/me"]
       interval: 10s
       timeout: 5s
       retries: 3

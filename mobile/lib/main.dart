@@ -15,6 +15,8 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Smart Attendance',
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
       initialRoute: '/',
       routes: {
         '/': (context) {

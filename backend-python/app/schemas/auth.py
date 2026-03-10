@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 
 
@@ -42,3 +42,30 @@ class TokenRefreshRequest(BaseModel):
 class TokenPayload(BaseModel):
     sub: str
     exp: int
+
+
+class AuthRegisterRequest(BaseModel):
+    email: EmailStr
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=128)
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: Optional[str] = Field(default=None, max_length=20)
+
+
+class AuthLogoutRequest(BaseModel):
+    refresh_token: str = Field(min_length=10)
+
+
+class AuthForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class AuthResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=10)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordChangeRequest(BaseModel):
+    old_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)

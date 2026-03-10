@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useLogout } from '../../api/hooks'
-import { LogOut, Settings, User, Bell, Menu, X } from 'lucide-react'
+import { LogOut, Settings, User, Bell } from 'lucide-react'
+import ThemeToggle from '../ui/ThemeToggle'
 import './Header.css'
 
 export default function Header() {
@@ -25,6 +26,8 @@ export default function Header() {
         </div>
 
         <div className="header__right">
+          <ThemeToggle compact />
+
           <button className="header__icon-btn">
             <Bell size={20} />
           </button>

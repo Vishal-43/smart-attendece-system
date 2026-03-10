@@ -1,14 +1,34 @@
+import { useEffect, useState } from 'react'
 import { Card, CardBody, Loading } from '../../components/Common'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { useAttendanceSummary, useDivisions } from '../../api/hooks'
+import { useAttendanceSummary } from '../../api/hooks'
+import { getDivisionAttendance } from '../../api/services'
 import './Reports.css'
 
 export default function AnalyticsPage() {
   const { data: summaryData, isLoading } = useAttendanceSummary({})
-  const { data: divisionsData } = useDivisions()
-  
+  const [divisionData, setDivisionData] = useState([])
+
   const summary = summaryData?.data?.data || summaryData?.data || {}
-  const divisions = divisionsData?.data?.data || divisionsData?.data || []
+
+  useEffect(() => {
+    const fetchDivisionAnalytics = async () => {
+      try {
+        const response = await getDivisionAttendance({})
+        const items = response?.data || []
+        setDivisionData(
+          items.map((item) => ({
+            name: item.division_name,
+            attendance: item.attendance_rate,
+          }))
+        )
+      } catch {
+        setDivisionData([])
+      }
+    }
+
+    fetchDivisionAnalytics()
+  }, [])
 
   const statusData = [
     { name: 'Present', value: summary.present || 0, color: '#10b981' },
@@ -16,11 +36,6 @@ export default function AnalyticsPage() {
     { name: 'Late', value: summary.late || 0, color: '#f59e0b' },
   ].filter(item => item.value > 0)
 
-  // Mock division data (in production, you'd fetch per-division stats)
-  const divisionData = Array.isArray(divisions) ? divisions.slice(0, 5).map((div, idx) => ({
-    name: div.name,
-    attendance: Math.floor(75 + Math.random() * 20), // Mock data
-  })) : []
 
   if (isLoading) {
     return <Loading />

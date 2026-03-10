@@ -1,0 +1,158 @@
+.glass-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: var(--spacing-md);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.glass-modal {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  background: var(--glass-panel-bg);
+  border: 1px solid var(--glass-panel-border);
+  border-radius: var(--glass-radius-xl);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    var(--glass-panel-shadow);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Size variants */
+.glass-modal--sm {
+  max-width: 400px;
+}
+
+.glass-modal--md {
+  max-width: 500px;
+}
+
+.glass-modal--lg {
+  max-width: 700px;
+}
+
+.glass-modal--xl {
+  max-width: 900px;
+}
+
+.glass-modal--full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+/* Modal header */
+.glass-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--glass-panel-border);
+}
+
+.glass-modal__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--glass-text-primary);
+  margin: 0;
+}
+
+.glass-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--glass-radius-sm);
+  color: var(--glass-text-tertiary);
+  cursor: pointer;
+  transition: var(--glass-transition);
+}
+
+.glass-modal__close:hover {
+  background: var(--glass-hover-bg);
+  color: var(--glass-text-primary);
+}
+
+/* Modal body */
+.glass-modal__body {
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  max-height: calc(90vh - 140px); /* Account for header and footer */
+}
+
+.glass-modal__body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.glass-modal__body::-webkit-scrollbar-track {
+  background: var(--glass-panel-bg);
+}
+
+.glass-modal__body::-webkit-scrollbar-thumb {
+  background: var(--glass-input-border);
+  border-radius: 4px;
+}
+
+.glass-modal__body::-webkit-scrollbar-thumb:hover {
+  background: var(--glass-accent);
+}
+
+/* Modal footer */
+.glass-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--glass-panel-border);
+}
+
+/* Centered footer */
+.glass-modal__footer--center {
+  justify-content: center;
+}
+
+/* Modal without header/footer */
+.glass-modal--no-header .glass-modal__body {
+  border-top-left-radius: var(--glass-radius-xl);
+  border-top-right-radius: var(--glass-radius-xl);
+}
+
+.glass-modal--no-footer .glass-modal__body {
+  border-bottom-left-radius: var(--glass-radius-xl);
+  border-bottom-right-radius: var(--glass-radius-xl);
+}

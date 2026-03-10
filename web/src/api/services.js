@@ -8,9 +8,9 @@ export const updateUser = async (userId, data) => {
 }
 
 export const updateUserPassword = async (userId, data) => {
-  const response = await apiClient.put(`/users/${userId}`, {
-    ...data,
-    _password_update: true, // Flag to indicate this is a password update
+  const response = await apiClient.put(`/users/${userId}/password`, {
+    old_password: data.old_password,
+    new_password: data.new_password,
   })
   return response.data
 }
@@ -91,6 +91,16 @@ export const refreshOTP = async (timetableId) => {
 // Report Services
 export const getAttendanceSummary = async (params) => {
   const response = await apiClient.get('/reports/attendance-summary', { params })
+  return response.data
+}
+
+export const getDashboardStats = async () => {
+  const response = await apiClient.get('/dashboard/stats')
+  return response.data
+}
+
+export const getDivisionAttendance = async (params) => {
+  const response = await apiClient.get('/reports/division-attendance', { params })
   return response.data
 }
 

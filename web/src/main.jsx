@@ -2,8 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import { ThemeProvider } from './contexts/ThemeContext'
 import App from './App'
 import './styles/globals.css'
+import './styles/theme.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,9 +22,11 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <Toaster position="top-right" />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+        <Toaster position="top-right" />
+      </QueryClientProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 )

@@ -5,7 +5,7 @@ from datetime import date, datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, and_, or_
+from sqlalchemy import case, func, and_, or_
 from sqlalchemy.orm import Session
 import csv
 import io
@@ -15,13 +15,13 @@ from app.core.exceptions import NotFoundError
 from app.core.response import success_response
 from app.database.attendance_records import AttendanceRecord
 from app.database.student_enrollments import StudentEnrollment
-from app.database.timetables import Timetable
+from app.database.timetables import Timetable as TimeTable
 from app.database.user import User
 from app.database.divisions import Division
 from app.database.courses import Course
 from app.database.branches import Branch
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
+router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 
 
 @router.get("/attendance-summary")
@@ -383,3 +383,52 @@ def export_attendance_csv(
             "Content-Disposition": f"attachment; filename={filename}"
         }
     )
+
+
+@router.get("/division-attendance")
+def get_division_attendance(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("teacher", "admin")),
+):
+    role_value = current_user.role.value if hasattr(current_user.role, "value") else current_user.role
+
+    query = (
+        db.query(
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            func.count(AttendanceRecord.id).label("total"),
+            func.sum(case((AttendanceRecord.status == "present", 1), else_=0)).label("present"),
+            func.sum(case((AttendanceRecord.status == "late", 1), else_=0)).label("late"),
+        )
+        .join(TimeTable, TimeTable.division_id == Division.id)
+        .join(AttendanceRecord, AttendanceRecord.timetable_id == TimeTable.id)
+    )
+
+    if start_date:
+        query = query.filter(func.date(AttendanceRecord.marked_at) >= start_date)
+    if end_date:
+        query = query.filter(func.date(AttendanceRecord.marked_at) <= end_date)
+
+    if role_value == "teacher":
+        query = query.filter(TimeTable.teacher_id == current_user.id)
+
+    rows = query.group_by(Division.id, Division.name).order_by(Division.name.asc()).all()
+
+    items = []
+    for row in rows:
+        attended = (row.present or 0) + (row.late or 0)
+        rate = round((attended / row.total) * 100, 2) if row.total else 0.0
+        items.append(
+            {
+                "division_id": row.division_id,
+                "division_name": row.division_name,
+                "total": row.total,
+                "present": row.present or 0,
+                "late": row.late or 0,
+                "attendance_rate": rate,
+            }
+        )
+
+    return success_response(items, "Division attendance report retrieved successfully")
