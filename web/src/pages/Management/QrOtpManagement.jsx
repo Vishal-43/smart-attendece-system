@@ -2,7 +2,7 @@
 // QR Code and OTP generation interface for teachers and admins
 
 import { useState, useEffect } from 'react';
-import { qrAPI, otpAPI, timetablesAPI } from '../../api/endpoints';
+import { qrAPI, otpAPI, realtimeAPI, timetablesAPI } from '../../api/endpoints';
 import useToast from '../../hooks/useToast';
 import Card from '../../components/Common/Card';
 import Button from '../../components/Common/Button';
@@ -18,6 +18,7 @@ export default function QrOtpManagement() {
   const [loading, setLoading] = useState(false);
   const [fetchingTimetables, setFetchingTimetables] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [liveCount, setLiveCount] = useState(0);
   const toast = useToast();
 
   // Fetch available timetables
@@ -64,6 +65,32 @@ export default function QrOtpManagement() {
 
     return () => clearInterval(interval);
   }, [selectedTimetable, activeTab, qrData, otpData]);
+
+  useEffect(() => {
+    if (!selectedTimetable) return undefined;
+
+    const socket = new WebSocket(realtimeAPI.attendanceSocketUrl(selectedTimetable));
+    const ping = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) socket.send('ping');
+    }, 15000);
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.event === 'attendance_marked') {
+          setLiveCount((prev) => prev + 1);
+          toast.success('New attendance marked');
+        }
+      } catch (err) {
+        console.error('Invalid websocket payload', err);
+      }
+    };
+
+    return () => {
+      clearInterval(ping);
+      socket.close();
+    };
+  }, [selectedTimetable]);
 
   const fetchTimetables = async () => {
     try {
@@ -272,6 +299,7 @@ export default function QrOtpManagement() {
             </div>
 
             <div className="tab-content">
+              <p style={{ marginBottom: '1rem' }}>Live attendance count: <strong>{liveCount}</strong></p>
               {activeTab === 'qr' ? (
                 <div className="qr-section">
                   {qrData ? (

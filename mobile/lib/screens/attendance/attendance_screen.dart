@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,7 +59,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         method: method,
         code: code,
       );
-      setState(() => _result = response.data['message'] ?? 'Attendance marked!');
+      setState(
+        () => _result = response.data['message'] ?? 'Attendance marked!',
+      );
     } catch (e) {
       setState(() => _result = 'Failed: $e');
     } finally {
@@ -70,10 +71,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final resultColor = (_result ?? '').toLowerCase().contains('failed')
+        ? colors.error
+        : colors.primary;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mark Attendance'),
-      ),
+      appBar: AppBar(title: const Text('Mark Attendance')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -86,14 +89,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               onPressed: _loading ? null : () => _markAttendance('otp'),
               child: const Text('Mark via OTP'),
             ),
-            if (_loading) const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-            if (_result != null) Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(_result!, style: const TextStyle(color: Colors.red)),
-            ),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+            if (_result != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(_result!, style: TextStyle(color: resultColor)),
+              ),
           ],
         ),
       ),

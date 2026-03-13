@@ -8,7 +8,8 @@ class CustomInputField extends StatelessWidget {
   final bool obscureText;
   final TextEditingController? controller;
 
-  const CustomInputField({super.key, 
+  const CustomInputField({
+    super.key,
     required this.label,
     required this.prefixIcon,
     this.obscureText = false,
@@ -17,25 +18,23 @@ class CustomInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.all(kPaddingM),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: colors.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.12)),
+          borderSide: BorderSide(color: colors.outlineVariant),
         ),
         hintText: label,
         hintStyle: TextStyle(
-          color: kBlack.withValues(alpha: 0.5),
+          color: colors.onSurfaceVariant,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: Icon(
-          prefixIcon,
-          color: kBlack.withValues(alpha: 0.5),
-        ),
+        prefixIcon: Icon(prefixIcon, color: colors.onSurfaceVariant),
       ),
       obscureText: obscureText,
     );

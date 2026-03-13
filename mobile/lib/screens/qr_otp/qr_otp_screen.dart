@@ -22,9 +22,9 @@ class _QrOtpScreenState extends State<QrOtpScreen>
   final _repo = const AttendanceRepository();
 
   // ── Form controllers ──────────────────────────────────────────────────────
-  final _qrController  = TextEditingController();
+  final _qrController = TextEditingController();
   final _otpController = TextEditingController();
-  final _qrFormKey  = GlobalKey<FormState>();
+  final _qrFormKey = GlobalKey<FormState>();
   final _otpFormKey = GlobalKey<FormState>();
 
   int? _timetableId;
@@ -39,7 +39,10 @@ class _QrOtpScreenState extends State<QrOtpScreen>
     _tabController.addListener(() {
       // Clear messages when switching tabs
       if (_tabController.indexIsChanging) {
-        setState(() { _successMessage = null; _errorMessage = null; });
+        setState(() {
+          _successMessage = null;
+          _errorMessage = null;
+        });
       }
     });
   }
@@ -65,14 +68,16 @@ class _QrOtpScreenState extends State<QrOtpScreen>
 
   Future<void> _submit(String method, String code) async {
     if (_timetableId == null) {
-      setState(() => _errorMessage = 'No session selected. Go back and try again.');
+      setState(
+        () => _errorMessage = 'No session selected. Go back and try again.',
+      );
       return;
     }
 
     setState(() {
       _isSubmitting = true;
       _successMessage = null;
-      _errorMessage   = null;
+      _errorMessage = null;
     });
 
     final result = await _repo.markAttendance(
@@ -86,7 +91,7 @@ class _QrOtpScreenState extends State<QrOtpScreen>
     if (result is Success) {
       setState(() {
         _successMessage = 'Attendance marked successfully!';
-        _isSubmitting   = false;
+        _isSubmitting = false;
       });
       // Clear the input
       if (method == 'qr') {
@@ -210,7 +215,11 @@ class _CodePanel extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: AppDecorations.badge(AppColors.primary),
-              child: Icon(icon, color: AppColors.primary, size: AppIconSize.xxl),
+              child: Icon(
+                icon,
+                color: AppColors.primary,
+                size: AppIconSize.xxl,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -233,10 +242,13 @@ class _CodePanel extends StatelessWidget {
             key: formKey,
             child: TextFormField(
               controller: controller,
-              keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+              keyboardType: isNumeric
+                  ? TextInputType.number
+                  : TextInputType.text,
               inputFormatters: [
                 if (isNumeric) FilteringTextInputFormatter.digitsOnly,
-                if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+                if (maxLength != null)
+                  LengthLimitingTextInputFormatter(maxLength),
               ],
               textAlign: TextAlign.center,
               style: isNumeric
@@ -262,7 +274,7 @@ class _CodePanel extends StatelessWidget {
 
           // Feedback banners
           if (successMessage != null) _FeedbackBanner.success(successMessage!),
-          if (errorMessage   != null) _FeedbackBanner.error(errorMessage!),
+          if (errorMessage != null) _FeedbackBanner.error(errorMessage!),
           if (successMessage != null || errorMessage != null)
             const SizedBox(height: AppSpacing.md),
 
@@ -272,11 +284,11 @@ class _CodePanel extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: isSubmitting ? null : onSubmit,
               icon: isSubmitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         strokeWidth: 2.5,
                       ),
                     )
@@ -306,10 +318,10 @@ class _FeedbackBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color    = isSuccess ? AppColors.success : AppColors.error;
-    final bgColor  = isSuccess ? AppColors.successBg : AppColors.errorBg;
-    final border   = isSuccess ? AppColors.successBorder : AppColors.errorBorder;
-    final icon     = isSuccess ? Icons.check_circle_rounded : Icons.error_rounded;
+    final color = isSuccess ? AppColors.success : AppColors.error;
+    final bgColor = isSuccess ? AppColors.successBg : AppColors.errorBg;
+    final border = isSuccess ? AppColors.successBorder : AppColors.errorBorder;
+    final icon = isSuccess ? Icons.check_circle_rounded : Icons.error_rounded;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),

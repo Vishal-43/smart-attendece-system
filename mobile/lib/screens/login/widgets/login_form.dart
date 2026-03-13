@@ -10,9 +10,7 @@ import '../../../services/auth_service.dart';
 class LoginForm extends StatefulWidget {
   final Animation<double> animation;
 
-  const LoginForm({super.key, 
-    required this.animation,
-  });
+  const LoginForm({super.key, required this.animation});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -30,25 +28,33 @@ class _LoginFormState extends State<LoginForm> {
       _loading = true;
       _error = null;
     });
-    final authService = AuthService();
-    final success = await authService.login(
-      _emailController.text.trim(),
-      _passwordController.text,
-      _usernameController.text.trim(),
-    );
-    setState(() => _loading = false);
-    if (success) {
-      // Navigate to home or dashboard
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+    try {
+      final authService = AuthService();
+      final success = await authService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _usernameController.text.trim(),
+      );
+      setState(() => _loading = false);
+      if (success) {
+        // Navigate to home or dashboard
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      } else {
+        setState(() => _error = 'Login failed. Please check your credentials.');
       }
-    } else {
-      setState(() => _error = 'Login failed. Please check your credentials.');
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final height =
         MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
     final space = height > 650 ? kSpaceM : kSpaceS;
@@ -93,7 +99,7 @@ class _LoginFormState extends State<LoginForm> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
-              child: Text(_error!, style: TextStyle(color: Colors.red)),
+              child: Text(_error!, style: TextStyle(color: colors.error)),
             ),
           FadeSlideTransition(
             animation: widget.animation,

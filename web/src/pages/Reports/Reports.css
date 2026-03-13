@@ -14,7 +14,7 @@
 
 .reports__header p {
   margin: 0;
-  color: var(--neo-light-text-secondary);
+  color: var(--glass-text-secondary);
 }
 
 .reports__filters {

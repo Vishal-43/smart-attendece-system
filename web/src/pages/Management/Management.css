@@ -24,13 +24,13 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  background-color: var(--neo-light-surface-secondary);
+  background-color: var(--glass-panel-bg);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--neo-light-border);
+  border: 1px solid var(--glass-panel-border);
 }
 
 .management__search-icon {
-  color: var(--neo-light-text-tertiary);
+  color: var(--glass-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -38,13 +38,13 @@
   flex: 1;
   border: none;
   background: none;
-  color: var(--neo-light-text);
+  color: var(--glass-text-primary);
   font-size: var(--text-sm);
   padding: 0;
 }
 
 .management__search-input::placeholder {
-  color: var(--neo-light-text-tertiary);
+  color: var(--glass-text-tertiary);
 }
 
 .management__search-input:focus {
@@ -67,7 +67,7 @@
 
 .management__page-info {
   font-size: var(--text-sm);
-  color: var(--neo-light-text-secondary);
+  color: var(--glass-text-secondary);
   min-width: 100px;
   text-align: center;
 }
@@ -84,7 +84,7 @@
   gap: var(--spacing-md);
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--neo-light-border);
+  border-top: 1px solid var(--glass-panel-border);
 }
 
 .management__grid {
@@ -95,28 +95,28 @@
 
 .management__card {
   padding: var(--spacing-lg);
-  background: var(--neo-light-surface);
+  background: var(--glass-panel-bg);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--neo-light-border);
-  box-shadow: var(--neo-shadow-md);
+  border: 1px solid var(--glass-panel-border);
+  box-shadow: var(--glass-panel-shadow);
   transition: all var(--transition-base);
 }
 
 .management__card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--neo-shadow-lg);
+  box-shadow: var(--glass-panel-shadow);
 }
 
 .management__card-title {
   font-size: var(--text-base);
   font-weight: 600;
-  color: var(--neo-light-text);
+  color: var(--glass-text-primary);
   margin-bottom: var(--spacing-sm);
 }
 
 .management__card-description {
   font-size: var(--text-xs);
-  color: var(--neo-light-text-secondary);
+  color: var(--glass-text-secondary);
   margin-bottom: var(--spacing-md);
 }
 

@@ -64,6 +64,8 @@ class _StudentSelectSessionScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Class Session'),
@@ -77,7 +79,7 @@ class _StudentSelectSessionScreenState
                     children: [
                       Text(
                         _error!,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: colors.error),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),

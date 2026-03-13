@@ -1,25 +1,29 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DioClient {
   static Dio? _dio;
 
-  // Android emulator uses 10.0.2.2 for localhost
-  // Physical devices use actual backend IP
-  // iOS emulator uses localhost:8000
-  static const String _localBackendUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String _androidEmulatorUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String _localhostUrl = 'http://localhost:8000/api/v1';
 
   /// Returns a Dio instance with a fresh auth token on every call.
   /// The base Dio is cached, but the token is read fresh from SharedPreferences.
   /// Use API_BASE_URL environment variable to override the default backend URL.
   static Future<Dio> getInstance() async {
+    final baseUrl = _getBaseUrl();
+
     _dio ??= Dio(
       BaseOptions(
-        baseUrl: _getBaseUrl(),
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
       ),
     );
+
+    // Keep base URL fresh so hot reload / platform differences don't retain stale values.
+    _dio!.options.baseUrl = baseUrl;
 
     // Always read the latest token
     final prefs = await SharedPreferences.getInstance();
@@ -41,12 +45,18 @@ class DioClient {
     if (envUrl.isNotEmpty) {
       return envUrl;
     }
-    
-    // Use platform-appropriate default
-    // Android emulator: 10.0.2.2 (special alias for localhost from emulator)
-    // Physical Android: Use actual backend IP (configure in your build script)
-    // iOS: localhost
-    return _localBackendUrl;
+
+    // Use platform-appropriate defaults.
+    if (kIsWeb) {
+      return _localhostUrl;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return _androidEmulatorUrl;
+    }
+
+    // iOS, macOS, Linux, Windows
+    return _localhostUrl;
   }
 
   /// Clear cached instance (call on logout).

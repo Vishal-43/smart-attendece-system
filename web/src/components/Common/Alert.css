@@ -6,7 +6,7 @@
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   border: 1px solid;
-  box-shadow: var(--neo-shadow-sm);
+  box-shadow: var(--glass-panel-shadow);
   animation: slideDown 300ms ease;
 }
 
@@ -56,30 +56,30 @@
 
 /* Info */
 .alert--info {
-  background-color: var(--neo-info-light);
-  border-color: var(--neo-info);
-  color: var(--neo-info);
+  background-color: var(--glass-info-light);
+  border-color: var(--glass-info);
+  color: var(--glass-info);
 }
 
 /* Success */
 .alert--success {
-  background-color: var(--neo-success-light);
-  border-color: var(--neo-success);
-  color: var(--neo-success);
+  background-color: var(--glass-success-light);
+  border-color: var(--glass-success);
+  color: var(--glass-success);
 }
 
 /* Warning */
 .alert--warning {
-  background-color: var(--neo-warning-light);
-  border-color: var(--neo-warning);
-  color: var(--neo-warning);
+  background-color: var(--glass-warning-light);
+  border-color: var(--glass-warning);
+  color: var(--glass-warning);
 }
 
 /* Error */
 .alert--error {
-  background-color: var(--neo-error-light);
-  border-color: var(--neo-error);
-  color: var(--neo-error);
+  background-color: var(--glass-error-light);
+  border-color: var(--glass-error);
+  color: var(--glass-error);
 }
 
 @keyframes slideDown {

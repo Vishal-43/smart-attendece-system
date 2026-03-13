@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_admin
 from app.schemas.auth import PasswordChangeRequest
+from app.schemas.user_preferences import UserPreferencesOut, UserPreferencesUpdate
 from app.schemas.user import UserCreate, UserUpdate, UserOut
+from app.database.user_preferences import UserPreferences
 from app.database.user import User
 from app.security.password import hash_password, verify_password
 
@@ -106,6 +108,48 @@ def update_user_password(
     db.commit()
 
     return {"success": True, "message": "Password updated successfully"}
+
+
+@router.get("/{user_id}/preferences", response_model=UserPreferencesOut)
+def get_user_preferences(
+    user_id: int,
+    db: Session = Depends(get_db),
+    curr_user=Depends(get_current_user),
+):
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    prefs = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+    if not prefs:
+        prefs = UserPreferences(user_id=user_id)
+        db.add(prefs)
+        db.commit()
+        db.refresh(prefs)
+    return prefs
+
+
+@router.put("/{user_id}/preferences", response_model=UserPreferencesOut)
+def update_user_preferences(
+    user_id: int,
+    payload: UserPreferencesUpdate,
+    db: Session = Depends(get_db),
+    curr_user=Depends(get_current_user),
+):
+    if curr_user.role.value != "admin" and curr_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    prefs = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+    if not prefs:
+        prefs = UserPreferences(user_id=user_id)
+        db.add(prefs)
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(prefs, key, value)
+
+    db.commit()
+    db.refresh(prefs)
+    return prefs
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

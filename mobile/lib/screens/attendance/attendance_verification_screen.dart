@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_verification_service.dart';
 import '../../services/location_service.dart';
@@ -8,10 +7,12 @@ class AttendanceVerificationScreen extends StatefulWidget {
   const AttendanceVerificationScreen({super.key});
 
   @override
-  State<AttendanceVerificationScreen> createState() => _AttendanceVerificationScreenState();
+  State<AttendanceVerificationScreen> createState() =>
+      _AttendanceVerificationScreenState();
 }
 
-class _AttendanceVerificationScreenState extends State<AttendanceVerificationScreen> {
+class _AttendanceVerificationScreenState
+    extends State<AttendanceVerificationScreen> {
   bool _loading = false;
   String? _result;
   final LocationService _locationService = LocationService();
@@ -26,7 +27,8 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       final position = await _locationService.getCurrentLocation();
       if (position == null) {
         setState(() {
-          _result = 'Unable to fetch live GPS coordinates. Please enable location permissions.';
+          _result =
+              'Unable to fetch live GPS coordinates. Please enable location permissions.';
         });
         return;
       }
@@ -60,7 +62,8 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
       final bssid = await _wifiService.getWifiBSSID();
       if (ssid == null || bssid == null) {
         setState(() {
-          _result = 'Unable to read WiFi metadata. Ensure WiFi is enabled and permissions are granted.';
+          _result =
+              'Unable to read WiFi metadata. Ensure WiFi is enabled and permissions are granted.';
         });
         return;
       }
@@ -83,6 +86,10 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final resultColor = (_result ?? '').toLowerCase().contains('failed')
+        ? colors.error
+        : colors.primary;
     return Scaffold(
       appBar: AppBar(title: const Text('Attendance Verification')),
       body: Center(
@@ -100,14 +107,16 @@ class _AttendanceVerificationScreenState extends State<AttendanceVerificationScr
               label: const Text('Verify via Access Point'),
               onPressed: _loading ? null : _verifyAccessPoint,
             ),
-            if (_loading) const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-            if (_result != null) Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(_result!, style: const TextStyle(color: Colors.green)),
-            ),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+            if (_result != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(_result!, style: TextStyle(color: resultColor)),
+              ),
           ],
         ),
       ),

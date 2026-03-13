@@ -110,8 +110,8 @@ export default function DashboardPage() {
                     ))}
                   </Pie>
                   <Tooltip contentStyle={{
-                    background: 'var(--neo-light-surface)',
-                    border: `1px solid var(--neo-light-border)`,
+                    background: 'var(--glass-panel-bg)',
+                    border: '1px solid var(--glass-panel-border)',
                     borderRadius: 'var(--radius-lg)'
                   }} />
                 </PieChart>
@@ -127,16 +127,16 @@ export default function DashboardPage() {
           <CardBody>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={attendanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--neo-light-border)" />
-                <XAxis dataKey="date" stroke="var(--neo-light-text-tertiary)" />
-                <YAxis stroke="var(--neo-light-text-tertiary)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-panel-border)" />
+                <XAxis dataKey="date" stroke="var(--glass-text-tertiary)" />
+                <YAxis stroke="var(--glass-text-tertiary)" />
                 <Tooltip contentStyle={{ 
-                  background: 'var(--neo-light-surface)',
-                  border: `1px solid var(--neo-light-border)`,
+                  background: 'var(--glass-panel-bg)',
+                  border: '1px solid var(--glass-panel-border)',
                   borderRadius: 'var(--radius-lg)'
                 }} />
                 <Legend />
-                <Line type="monotone" dataKey="count" stroke="var(--neo-primary)" strokeWidth={2} dot={{ fill: 'var(--neo-primary)' }} />
+                <Line type="monotone" dataKey="count" stroke="var(--glass-accent)" strokeWidth={2} dot={{ fill: 'var(--glass-accent)' }} />
               </LineChart>
             </ResponsiveContainer>
           </CardBody>
@@ -153,15 +153,15 @@ export default function DashboardPage() {
                 { name: 'Absent', count: summary.absent || 0 },
                 { name: 'Late', count: summary.late || 0 },
               ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--neo-light-border)" />
-                <XAxis dataKey="name" stroke="var(--neo-light-text-tertiary)" />
-                <YAxis stroke="var(--neo-light-text-tertiary)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-panel-border)" />
+                <XAxis dataKey="name" stroke="var(--glass-text-tertiary)" />
+                <YAxis stroke="var(--glass-text-tertiary)" />
                 <Tooltip contentStyle={{
-                  background: 'var(--neo-light-surface)',
-                  border: `1px solid var(--neo-light-border)`,
+                  background: 'var(--glass-panel-bg)',
+                  border: '1px solid var(--glass-panel-border)',
                   borderRadius: 'var(--radius-lg)'
                 }} />
-                <Bar dataKey="count" fill="var(--neo-primary)" />
+                <Bar dataKey="count" fill="var(--glass-accent)" />
               </BarChart>
             </ResponsiveContainer>
           </CardBody>

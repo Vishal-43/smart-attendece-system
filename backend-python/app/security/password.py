@@ -4,10 +4,10 @@ load_dotenv()
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(
-    schemes=[os.getenv("SCHEME")],
+    schemes=[os.getenv("SCHEME", "pbkdf2_sha256")],
     deprecated="auto",
-    pbkdf2_sha256__default_rounds=int(os.getenv("ROUNDS")),
-    pbkdf2_sha256__default_salt_size=int(os.getenv("SALT_SIZE")),
+    pbkdf2_sha256__default_rounds=int(os.getenv("ROUNDS", "29000")),
+    pbkdf2_sha256__default_salt_size=int(os.getenv("SALT_SIZE", "16")),
 )
 
 

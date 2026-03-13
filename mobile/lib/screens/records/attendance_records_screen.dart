@@ -6,7 +6,8 @@ class AttendanceRecordsScreen extends StatefulWidget {
   const AttendanceRecordsScreen({super.key});
 
   @override
-  State<AttendanceRecordsScreen> createState() => _AttendanceRecordsScreenState();
+  State<AttendanceRecordsScreen> createState() =>
+      _AttendanceRecordsScreenState();
 }
 
 class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
@@ -51,25 +52,33 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Attendance Records')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-              : _records.isEmpty
-                  ? const Center(child: Text('No attendance records found.'))
-                  : ListView.builder(
-                      itemCount: _records.length,
-                      itemBuilder: (context, i) {
-                        final rec = _records[i];
-                        return ListTile(
-                          leading: Icon(Icons.check_circle, color: rec['status'] == 'present' ? Colors.green : Colors.red),
-                          title: Text('Date: ${rec['date']}'),
-                          subtitle: Text('Status: ${rec['status']}'),
-                        );
-                      },
-                    ),
+          ? Center(
+              child: Text(_error!, style: TextStyle(color: colors.error)),
+            )
+          : _records.isEmpty
+          ? const Center(child: Text('No attendance records found.'))
+          : ListView.builder(
+              itemCount: _records.length,
+              itemBuilder: (context, i) {
+                final rec = _records[i];
+                return ListTile(
+                  leading: Icon(
+                    Icons.check_circle,
+                    color: rec['status'] == 'present'
+                        ? colors.primary
+                        : colors.error,
+                  ),
+                  title: Text('Date: ${rec['date']}'),
+                  subtitle: Text('Status: ${rec['status']}'),
+                );
+              },
+            ),
     );
   }
 }

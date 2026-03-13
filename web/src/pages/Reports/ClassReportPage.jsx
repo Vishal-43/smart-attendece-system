@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardBody, CardHeader, Select, Input, Loading } from '../../components/Common'
 import DataTable from '../../components/Common/DataTable'
 import { useClassReport, useTimetables } from '../../api/hooks'
+import { realtimeAPI } from '../../api/endpoints'
 import './Reports.css'
 
 export default function ClassReportPage() {
+  const queryClient = useQueryClient()
   const [selectedTimetableId, setSelectedTimetableId] = useState('')
   const [sessionDate, setSessionDate] = useState('')
 
@@ -25,6 +29,26 @@ export default function ClassReportPage() {
   ]
 
   const tableData = report.students || []
+
+  useEffect(() => {
+    if (!selectedTimetableId) return undefined
+
+    const socket = new WebSocket(realtimeAPI.attendanceSocketUrl(selectedTimetableId))
+    const ping = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send('ping')
+      }
+    }, 15000)
+
+    socket.onmessage = () => {
+      queryClient.invalidateQueries({ queryKey: ['reports', 'class', selectedTimetableId] })
+    }
+
+    return () => {
+      clearInterval(ping)
+      socket.close()
+    }
+  }, [selectedTimetableId, queryClient])
 
   return (
     <div className="reports">

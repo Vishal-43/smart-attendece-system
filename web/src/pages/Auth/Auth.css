@@ -39,11 +39,11 @@
 }
 
 .auth-title {
-  color: #e6edf3;
+  color: var(--glass-text-primary);
 }
 
 .auth-subtitle {
-  color: #9da7b3;
+  color: var(--glass-text-secondary);
 }
 
 /* EXACT INPUT COLOR */

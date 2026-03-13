@@ -13,7 +13,7 @@
 
 .settings__header p {
   margin: 0;
-  color: var(--neo-light-text-secondary);
+  color: var(--glass-text-secondary);
 }
 
 .settings__form {
@@ -31,7 +31,7 @@
   gap: var(--spacing-md);
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--neo-light-border);
+  border-top: 1px solid var(--glass-panel-border);
   justify-content: flex-end;
 }
 

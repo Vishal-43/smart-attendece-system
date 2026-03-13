@@ -1,5 +1,3 @@
-// teacher_qr_otp_management_screen.dart
-// Teacher/Admin screen for generating and managing QR codes and OTPs
 
 import 'dart:async';
 import 'dart:convert';
@@ -306,6 +304,8 @@ class _TeacherQrOtpManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('QR & OTP Management'),
@@ -347,7 +347,7 @@ class _TeacherQrOtpManagementScreenState
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(color: colors.error),
                     ),
                   ),
 
@@ -395,9 +395,9 @@ class _TeacherQrOtpManagementScreenState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: Image.memory(
                 base64Decode(_qrImageBase64!),
@@ -410,7 +410,7 @@ class _TeacherQrOtpManagementScreenState
               data: _qrCode!,
               version: QrVersions.auto,
               size: 300.0,
-              backgroundColor: Colors.white,
+              backgroundColor: colors.surface,
             ),
           const SizedBox(height: 24),
           Text(
@@ -423,7 +423,7 @@ class _TeacherQrOtpManagementScreenState
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: _timeRemaining < 60 ? Colors.red : Colors.black,
+              color: _timeRemaining < 60 ? colors.error : colors.onSurface,
             ),
           ),
           const SizedBox(height: 24),
@@ -467,8 +467,8 @@ class _TeacherQrOtpManagementScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              border: Border.all(color: Colors.blue, width: 2),
+              color: colors.primaryContainer,
+              border: Border.all(color: colors.primary, width: 2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -487,7 +487,7 @@ class _TeacherQrOtpManagementScreenState
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: _timeRemaining < 60 ? Colors.red : Colors.black,
+              color: _timeRemaining < 60 ? colors.error : colors.onSurface,
             ),
           ),
           const SizedBox(height: 24),

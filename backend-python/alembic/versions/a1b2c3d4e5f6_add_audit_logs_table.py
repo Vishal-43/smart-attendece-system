@@ -19,8 +19,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create audit_logs table."""
-    # Enable pgcrypto for gen_random_uuid() if not already active
-    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+
+    # PostgreSQL-specific UUID default via pgcrypto.
+    if dialect_name == "postgresql":
+        op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+        id_server_default = sa.text("gen_random_uuid()::text")
+        created_at_default = sa.text("NOW()")
+    else:
+        id_server_default = None
+        created_at_default = sa.text("CURRENT_TIMESTAMP")
 
     op.create_table(
         "audit_logs",
@@ -28,7 +37,7 @@ def upgrade() -> None:
             "id",
             sa.String(36),
             primary_key=True,
-            server_default=sa.text("gen_random_uuid()::text"),
+            server_default=id_server_default,
             nullable=False,
         ),
         sa.Column(
@@ -46,7 +55,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime,
-            server_default=sa.text("NOW()"),
+            server_default=created_at_default,
             nullable=False,
             index=True,
         ),

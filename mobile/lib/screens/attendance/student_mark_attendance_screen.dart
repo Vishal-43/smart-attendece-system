@@ -14,10 +14,7 @@ import 'package:geolocator/geolocator.dart';
 class StudentMarkAttendanceScreen extends StatefulWidget {
   final int timetableId;
 
-  const StudentMarkAttendanceScreen({
-    super.key,
-    required this.timetableId,
-  });
+  const StudentMarkAttendanceScreen({super.key, required this.timetableId});
 
   @override
   State<StudentMarkAttendanceScreen> createState() =>
@@ -181,15 +178,13 @@ class _StudentMarkAttendanceScreenState
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildQRScannerTab(),
-          _buildOTPTab(),
-        ],
+        children: [_buildQRScannerTab(), _buildOTPTab()],
       ),
     );
   }
 
   Widget _buildQRScannerTab() {
+    final colors = Theme.of(context).colorScheme;
     return Stack(
       children: [
         MobileScanner(
@@ -201,7 +196,7 @@ class _StudentMarkAttendanceScreenState
         ),
         if (_isSubmitting || _successMessage != null || _errorMessage != null)
           Container(
-            color: Colors.black54,
+            color: colors.scrim.withValues(alpha: 0.54),
             child: Center(
               child: Card(
                 margin: const EdgeInsets.all(24),
@@ -215,9 +210,9 @@ class _StudentMarkAttendanceScreenState
                       else if (_successMessage != null)
                         Column(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.check_circle,
-                              color: Colors.green,
+                              color: colors.primary,
                               size: 64,
                             ),
                             const SizedBox(height: 16),
@@ -234,17 +229,13 @@ class _StudentMarkAttendanceScreenState
                       else if (_errorMessage != null)
                         Column(
                           children: [
-                            const Icon(
-                              Icons.error,
-                              color: Colors.red,
-                              size: 64,
-                            ),
+                            Icon(Icons.error, color: colors.error, size: 64),
                             const SizedBox(height: 16),
                             Text(
                               _errorMessage!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.red,
+                                color: colors.error,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -273,13 +264,13 @@ class _StudentMarkAttendanceScreenState
           right: 0,
           child: Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.black54,
+            color: colors.scrim.withValues(alpha: 0.54),
             child: Column(
               children: [
-                const Text(
+                Text(
                   'Point camera at QR code',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -287,12 +278,18 @@ class _StudentMarkAttendanceScreenState
                 if (_position != null)
                   Text(
                     'Location: ${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                      color: colors.onSurface.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
                   ),
                 if (_wifiInfo != null)
                   Text(
                     _wifiInfo!,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                      color: colors.onSurface.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
                   ),
               ],
             ),
@@ -303,6 +300,7 @@ class _StudentMarkAttendanceScreenState
   }
 
   Widget _buildOTPTab() {
+    final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -312,10 +310,7 @@ class _StudentMarkAttendanceScreenState
           children: [
             const Text(
               'Enter 6-digit OTP',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             TextFormField(
@@ -342,12 +337,15 @@ class _StudentMarkAttendanceScreenState
             if (_position != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 16, color: Colors.green),
+                  Icon(Icons.location_on, size: 16, color: colors.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Location: ${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -357,12 +355,15 @@ class _StudentMarkAttendanceScreenState
             if (_wifiInfo != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.wifi, size: 16, color: Colors.blue),
+                  Icon(Icons.wifi, size: 16, color: colors.secondary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _wifiInfo!,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -390,18 +391,18 @@ class _StudentMarkAttendanceScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border.all(color: Colors.green),
+                  color: colors.primaryContainer,
+                  border: Border.all(color: colors.primary),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green),
+                    Icon(Icons.check_circle, color: colors.primary),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _successMessage!,
-                        style: const TextStyle(color: Colors.green),
+                        style: TextStyle(color: colors.primary),
                       ),
                     ),
                   ],
@@ -413,18 +414,18 @@ class _StudentMarkAttendanceScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  border: Border.all(color: Colors.red),
+                  color: colors.errorContainer,
+                  border: Border.all(color: colors.error),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error, color: Colors.red),
+                    Icon(Icons.error, color: colors.error),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: colors.error),
                       ),
                     ),
                   ],

@@ -66,3 +66,6 @@ watchfiles
 wcwidth
 websockets
 wsproto
+slowapi
+structlog
+python-json-logger

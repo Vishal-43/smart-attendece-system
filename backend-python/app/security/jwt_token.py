@@ -16,7 +16,7 @@ def _algorithm() -> str:
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     exp_min = datetime.utcnow() + timedelta(
-        minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+        minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     )
     to_encode.update({"exp": exp_min})
     encoded_jwt = jwt.encode(

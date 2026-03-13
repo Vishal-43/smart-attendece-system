@@ -19,6 +19,9 @@ export const usersAPI = {
   getUser: (id) => apiClient.get(`/users/${id}`),
   createUser: (data) => apiClient.post('/users/', data),
   updateUser: (id, data) => apiClient.put(`/users/${id}`, data),
+  updatePassword: (id, data) => apiClient.put(`/users/${id}/password`, data),
+  getPreferences: (id) => apiClient.get(`/users/${id}/preferences`),
+  updatePreferences: (id, data) => apiClient.put(`/users/${id}/preferences`, data),
   deleteUser: (id) => apiClient.delete(`/users/${id}`),
 }
 
@@ -130,4 +133,19 @@ export const reportsAPI = {
   getStudentReport: (studentId) => apiClient.get(`/reports/student/${studentId}`),
   getClassReport: (timetableId, params) => apiClient.get(`/reports/class/${timetableId}`, { params }),
   exportCSV: (params) => apiClient.get('/reports/export/csv', { params, responseType: 'blob' }),
+}
+
+// Notifications Endpoints
+export const notificationsAPI = {
+  list: (params) => apiClient.get('/notifications/', { params }),
+  markRead: (id) => apiClient.put(`/notifications/${id}/read`),
+  unreadCount: () => apiClient.get('/notifications/unread-count'),
+}
+
+export const realtimeAPI = {
+  attendanceSocketUrl: (timetableId) => {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const wsBase = apiBase.replace(/^http/, 'ws')
+    return `${wsBase}/ws/attendance/${timetableId}`
+  },
 }

@@ -28,7 +28,9 @@ class _UserEditScreenState extends State<UserEditScreen> {
     final user = widget.user ?? {};
     _emailController = TextEditingController(text: user['email'] ?? '');
     _usernameController = TextEditingController(text: user['username'] ?? '');
-    _firstNameController = TextEditingController(text: user['first_name'] ?? '');
+    _firstNameController = TextEditingController(
+      text: user['first_name'] ?? '',
+    );
     _lastNameController = TextEditingController(text: user['last_name'] ?? '');
     _phoneController = TextEditingController(text: user['phone'] ?? '');
     _role = user['role']?.toString() ?? 'student';
@@ -49,7 +51,10 @@ class _UserEditScreenState extends State<UserEditScreen> {
 
   Future<void> _saveUser() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       final service = AdminService();
       final userData = {
@@ -72,16 +77,23 @@ class _UserEditScreenState extends State<UserEditScreen> {
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
-      setState(() { _error = 'Failed to save user: $e'; });
+      setState(() {
+        _error = 'Failed to save user: $e';
+      });
     } finally {
-      setState(() { _saving = false; });
+      setState(() {
+        _saving = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.user == null ? 'Add User' : 'Edit User')),
+      appBar: AppBar(
+        title: Text(widget.user == null ? 'Add User' : 'Edit User'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -91,12 +103,14 @@ class _UserEditScreenState extends State<UserEditScreen> {
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
-                validator: (v) => v == null || v.isEmpty ? 'Email required' : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Email required' : null,
               ),
               TextFormField(
                 controller: _usernameController,
                 decoration: const InputDecoration(labelText: 'Username'),
-                validator: (v) => v == null || v.isEmpty ? 'Username required' : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Username required' : null,
               ),
               TextFormField(
                 controller: _passwordController,
@@ -139,11 +153,13 @@ class _UserEditScreenState extends State<UserEditScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(_error!, style: TextStyle(color: colors.error)),
                 ),
               ElevatedButton(
                 onPressed: _saving ? null : _saveUser,
-                child: _saving ? const CircularProgressIndicator() : Text(widget.user == null ? 'Create' : 'Update'),
+                child: _saving
+                    ? const CircularProgressIndicator()
+                    : Text(widget.user == null ? 'Create' : 'Update'),
               ),
             ],
           ),

@@ -25,6 +25,16 @@ export const getCurrentUser = async () => {
   return response.data
 }
 
+export const getUserPreferences = async (userId) => {
+  const response = await apiClient.get(`/users/${userId}/preferences`)
+  return response.data
+}
+
+export const updateUserPreferences = async (userId, data) => {
+  const response = await apiClient.put(`/users/${userId}/preferences`, data)
+  return response.data
+}
+
 export const listUsers = async (params) => {
   const response = await apiClient.get('/users/', { params })
   return response.data
@@ -168,6 +178,16 @@ export const listTimetables = async (params) => {
   return response.data
 }
 
+export const getMySchedule = async () => {
+  const response = await apiClient.get('/timetables/my-schedule')
+  return response.data
+}
+
+export const getTodayTimetable = async () => {
+  const response = await apiClient.get('/timetables/today')
+  return response.data
+}
+
 export const createTimetable = async (data) => {
   const response = await apiClient.post('/timetables', data)
   return response.data
@@ -294,5 +314,21 @@ export const resetPassword = async (token, newPassword) => {
     token,
     new_password: newPassword,
   })
+  return response.data
+}
+
+// Notification Services
+export const listNotifications = async (params) => {
+  const response = await apiClient.get('/notifications/', { params })
+  return response.data
+}
+
+export const markNotificationRead = async (notificationId) => {
+  const response = await apiClient.put(`/notifications/${notificationId}/read`)
+  return response.data
+}
+
+export const getUnreadNotificationCount = async () => {
+  const response = await apiClient.get('/notifications/unread-count')
   return response.data
 }

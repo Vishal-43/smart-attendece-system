@@ -17,6 +17,8 @@ from app.database.student_enrollments import StudentEnrollment, EnrollmentStatus
 from app.database.user import User
 from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
+from app.services.attendance_ws import attendance_ws_manager
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/v1/attendance", tags=["Attendance Records"])
 
@@ -172,6 +174,26 @@ async def mark_attendance(
     entry.used_count = (entry.used_count or 0) + 1
     db.commit()
     db.refresh(record)
+
+    if timetable.teacher_id:
+        create_notification(
+            db,
+            user_id=timetable.teacher_id,
+            title="New attendance marked",
+            message=f"{current_user.first_name} {current_user.last_name} marked attendance for {timetable.subject}.",
+        )
+
+    await attendance_ws_manager.broadcast(
+        timetable_id,
+        {
+            "event": "attendance_marked",
+            "record": _serialize_record(record),
+            "student": {
+                "id": current_user.id,
+                "name": f"{current_user.first_name} {current_user.last_name}".strip(),
+            },
+        },
+    )
 
     await log_action(
         db,
