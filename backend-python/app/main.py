@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
+from dotenv import load_dotenv
+load_dotenv()
 
 from app.core.exceptions import (
     ConflictError,

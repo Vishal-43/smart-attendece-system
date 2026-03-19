@@ -6,6 +6,7 @@ import os
 
 load_dotenv()
 URL = os.getenv("DATABASE_URL")
+print("DB URL loaded:", URL)  # add this
 engine = create_engine(
     URL,
     echo=os.getenv("DEBUG", "False").lower() == "true",
