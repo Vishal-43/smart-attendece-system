@@ -22,10 +22,12 @@ class DioClient {
       ),
     );
 
-    // Keep base URL fresh so hot reload / platform differences don't retain stale values.
     _dio!.options.baseUrl = baseUrl;
 
-    // Always read the latest token
+    if (!_dio!.interceptors.any((i) => i is _UnwrapInterceptor)) {
+      _dio!.interceptors.add(_UnwrapInterceptor());
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     if (token != null) {
@@ -37,16 +39,12 @@ class DioClient {
     return _dio!;
   }
 
-  /// Get the base URL from environment or use sensible defaults
   static String _getBaseUrl() {
-    // Try to use environment variable if available
-    // Build with: flutter run --dart-define=API_BASE_URL=http://your-backend:8000/api/v1
     const String? envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) {
       return envUrl;
     }
 
-    // Use platform-appropriate defaults.
     if (kIsWeb) {
       return _localhostUrl;
     }
@@ -55,12 +53,26 @@ class DioClient {
       return _androidEmulatorUrl;
     }
 
-    // iOS, macOS, Linux, Windows
     return _localhostUrl;
   }
 
-  /// Clear cached instance (call on logout).
   static void reset() {
     _dio = null;
+  }
+}
+
+class _UnwrapInterceptor extends Interceptor {
+  @override
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
+    final data = response.data;
+    if (data is Map &&
+        data.containsKey('data') &&
+        data.containsKey('success')) {
+      response.data = data['data'];
+    }
+    handler.next(response);
   }
 }

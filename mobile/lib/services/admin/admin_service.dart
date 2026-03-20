@@ -22,8 +22,8 @@ class AdminService {
       if (data is List) {
         return List<Map<String, dynamic>>.from(data);
       }
-      if (data is Map && data['users'] is List) {
-        return List<Map<String, dynamic>>.from(data['users']);
+      if (data is Map && data['data'] is List) {
+        return List<Map<String, dynamic>>.from(data['data']);
       }
       throw Exception('Unexpected response format');
     }

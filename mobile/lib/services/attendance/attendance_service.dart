@@ -16,9 +16,6 @@ class AttendanceService {
 
   Future<Response> getAttendanceRecords(String userId) async {
     final dio = await DioClient.getInstance();
-    return await dio.get(
-      '/attendance/records',
-      queryParameters: {'user_id': userId},
-    );
+    return await dio.get('/attendance/history/$userId');
   }
 }

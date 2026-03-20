@@ -39,7 +39,7 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
       final service = AttendanceService();
       final response = await service.getAttendanceRecords(userId);
       setState(() {
-        _records = response.data['records'] ?? [];
+        _records = response.data['items'] ?? [];
         _loading = false;
       });
     } catch (e) {
@@ -74,7 +74,7 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
                         ? colors.primary
                         : colors.error,
                   ),
-                  title: Text('Date: ${rec['date']}'),
+                  title: Text('Date: ${rec['marked_at']}'),
                   subtitle: Text('Status: ${rec['status']}'),
                 );
               },

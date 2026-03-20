@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -69,7 +68,7 @@ class _TeacherQrOtpManagementScreenState
       final response = await _service.getTimetables();
       final data = response.data;
       setState(() {
-        _timetables = data is Map ? (data['data'] ?? []) : (data ?? []);
+        _timetables = (data is List) ? List.from(data) : [];
         _loading = false;
       });
     } catch (e) {
@@ -94,7 +93,7 @@ class _TeacherQrOtpManagementScreenState
 
     try {
       final response = await _service.generateQrCode(_selectedTimetableId!);
-      final data = response.data['data'] ?? response.data;
+      final data = response.data;
 
       setState(() {
         _qrCode = data['code'];
@@ -124,7 +123,7 @@ class _TeacherQrOtpManagementScreenState
 
     try {
       final response = await _service.refreshQrCode(_selectedTimetableId!);
-      final data = response.data['data'] ?? response.data;
+      final data = response.data;
 
       setState(() {
         _qrCode = data['code'];
@@ -135,9 +134,9 @@ class _TeacherQrOtpManagementScreenState
 
       _startCountdown();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('QR Code refreshed')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('QR Code refreshed')));
       }
     } catch (e) {
       setState(() {
@@ -151,9 +150,11 @@ class _TeacherQrOtpManagementScreenState
     if (_selectedTimetableId == null) return;
 
     try {
-      final response =
-          await _service.getCurrentQr(_selectedTimetableId!, withImage: true);
-      final data = response.data['data'] ?? response.data;
+      final response = await _service.getCurrentQr(
+        _selectedTimetableId!,
+        withImage: true,
+      );
+      final data = response.data;
 
       setState(() {
         _qrCode = data['code'];
@@ -182,7 +183,7 @@ class _TeacherQrOtpManagementScreenState
 
     try {
       final response = await _service.generateOtp(_selectedTimetableId!);
-      final data = response.data['data'] ?? response.data;
+      final data = response.data;
 
       setState(() {
         _otpCode = data['code'];
@@ -211,7 +212,7 @@ class _TeacherQrOtpManagementScreenState
 
     try {
       final response = await _service.refreshOtp(_selectedTimetableId!);
-      final data = response.data['data'] ?? response.data;
+      final data = response.data;
 
       setState(() {
         _otpCode = data['code'];
@@ -221,9 +222,9 @@ class _TeacherQrOtpManagementScreenState
 
       _startCountdown();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP refreshed')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('OTP refreshed')));
       }
     } catch (e) {
       setState(() {
@@ -238,7 +239,7 @@ class _TeacherQrOtpManagementScreenState
 
     try {
       final response = await _service.getCurrentOtp(_selectedTimetableId!);
-      final data = response.data['data'] ?? response.data;
+      final data = response.data;
 
       setState(() {
         _otpCode = data['code'];
@@ -354,10 +355,7 @@ class _TeacherQrOtpManagementScreenState
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-                    children: [
-                      _buildQRTab(),
-                      _buildOTPTab(),
-                    ],
+                    children: [_buildQRTab(), _buildOTPTab()],
                   ),
                 ),
               ],
@@ -366,6 +364,7 @@ class _TeacherQrOtpManagementScreenState
   }
 
   Widget _buildQRTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_selectedTimetableId == null) {
       return const Center(child: Text('Please select a timetable'));
     }
@@ -413,10 +412,7 @@ class _TeacherQrOtpManagementScreenState
               backgroundColor: colors.surface,
             ),
           const SizedBox(height: 24),
-          Text(
-            'Code: $_qrCode',
-            style: const TextStyle(fontSize: 16),
-          ),
+          Text('Code: $_qrCode', style: const TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
           Text(
             'Expires in: ${_formatTime(_timeRemaining)}',
@@ -438,6 +434,7 @@ class _TeacherQrOtpManagementScreenState
   }
 
   Widget _buildOTPTab() {
+    final colors = Theme.of(context).colorScheme;
     if (_selectedTimetableId == null) {
       return const Center(child: Text('Please select a timetable'));
     }

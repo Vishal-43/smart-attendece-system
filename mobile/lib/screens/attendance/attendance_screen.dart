@@ -60,7 +60,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         code: code,
       );
       setState(
-        () => _result = response.data['message'] ?? 'Attendance marked!',
+        () => _result =
+            response.data['status']?.toString().toUpperCase() ?? 'PRESENT',
       );
     } catch (e) {
       setState(() => _result = 'Failed: $e');

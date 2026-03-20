@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserService {
-  static const String _baseUrl = 'http://localhost:8000/api/v1/auth/me'; // Update to your backend URL
+  static const String _baseUrl =
+      'http://localhost:8000/api/v1/auth/me'; // Update to your backend URL
 
   Future<String?> fetchUserRole() async {
     final prefs = await SharedPreferences.getInstance();
@@ -18,7 +19,7 @@ class UserService {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['role'];
+      return data['data']?['role'];
     }
     return null;
   }

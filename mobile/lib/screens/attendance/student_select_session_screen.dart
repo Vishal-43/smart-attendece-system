@@ -37,7 +37,7 @@ class _StudentSelectSessionScreenState
       final response = await _service.getTimetables();
       final data = response.data;
       setState(() {
-        _timetables = data is Map ? (data['data'] ?? []) : (data ?? []);
+        _timetables = (data is List) ? List.from(data) : [];
         _loading = false;
       });
     } catch (e) {
@@ -55,9 +55,7 @@ class _StudentSelectSessionScreenState
   void _selectSession(int timetableId) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => StudentMarkAttendanceScreen(
-          timetableId: timetableId,
-        ),
+        builder: (_) => StudentMarkAttendanceScreen(timetableId: timetableId),
       ),
     );
   }
@@ -67,60 +65,53 @@ class _StudentSelectSessionScreenState
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Class Session'),
-      ),
+      appBar: AppBar(title: const Text('Select Class Session')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _error!,
-                        style: TextStyle(color: colors.error),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _fetchTimetables,
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _error!,
+                    style: TextStyle(color: colors.error),
+                    textAlign: TextAlign.center,
                   ),
-                )
-              : _timetables.isEmpty
-                  ? const Center(
-                      child: Text('No class sessions available'),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _timetables.length,
-                      itemBuilder: (context, index) {
-                        final tt = _timetables[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              child: Text(
-                                (tt['subject'] ?? 'C')[0].toUpperCase(),
-                              ),
-                            ),
-                            title: Text(
-                              tt['subject'] ?? 'Unknown Subject',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              '${tt['day_of_week']} ${tt['start_time']} - ${tt['end_time']}',
-                            ),
-                            trailing: const Icon(Icons.arrow_forward_ios),
-                            onTap: () => _selectSession(tt['id']),
-                          ),
-                        );
-                      },
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchTimetables,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : _timetables.isEmpty
+          ? const Center(child: Text('No class sessions available'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _timetables.length,
+              itemBuilder: (context, index) {
+                final tt = _timetables[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Text((tt['subject'] ?? 'C')[0].toUpperCase()),
                     ),
+                    title: Text(
+                      tt['subject'] ?? 'Unknown Subject',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${tt['day_of_week']} ${tt['start_time']} - ${tt['end_time']}',
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () => _selectSession(tt['id']),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
