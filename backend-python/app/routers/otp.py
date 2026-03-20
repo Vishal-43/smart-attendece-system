@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.core.config import settings
 from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.redis_service import redis_service
 from app.core.response import success_response
 from app.database.otp_code import OTPCode
 from app.database.timetables import Timetable
@@ -26,6 +27,8 @@ from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/v1/otp", tags=["OTP Codes"])
+
+OTP_REDIS_KEY = "otp:active:{timetable_id}"
 
 
 def _make_otp() -> str:
@@ -86,6 +89,10 @@ async def generate_otp(
     db.commit()
     db.refresh(otp)
 
+    redis_key = OTP_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (otp.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_otp(otp), ex_seconds=int(ttl_seconds))
+
     await log_action(
         db,
         action="OTP_GENERATED",
@@ -127,6 +134,10 @@ async def get_current_otp(
     if not otp:
         raise NotFoundError("No active OTP found for this timetable")
 
+    redis_key = OTP_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (otp.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_otp(otp), ex_seconds=int(ttl_seconds))
+
     return success_response(_serialize_otp(otp))
 
 
@@ -166,6 +177,10 @@ async def refresh_otp(
     db.add(otp)
     db.commit()
     db.refresh(otp)
+
+    redis_key = OTP_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (otp.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_otp(otp), ex_seconds=int(ttl_seconds))
 
     await log_action(
         db,

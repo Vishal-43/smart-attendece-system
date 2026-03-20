@@ -9,6 +9,7 @@ Endpoints:
 
 import base64
 import io
+import json
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.core.config import settings
 from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.redis_service import redis_service
 from app.core.response import success_response
 from app.database.qr_codes import QRCode
 from app.database.timetables import Timetable
@@ -28,6 +30,8 @@ from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/v1/qr", tags=["QR Codes"])
+
+QR_REDIS_KEY = "qr:active:{timetable_id}"
 
 
 def _generate_qr_image(data: str) -> str:
@@ -97,6 +101,10 @@ async def generate_qr_code(
     db.commit()
     db.refresh(qr)
 
+    redis_key = QR_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (qr.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_qr(qr), ex_seconds=int(ttl_seconds))
+
     await log_action(
         db,
         action="QR_CODE_GENERATED",
@@ -139,6 +147,10 @@ async def get_current_qr(
     if not qr:
         raise NotFoundError("No active QR code found for this timetable")
 
+    redis_key = QR_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (qr.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_qr(qr), ex_seconds=int(ttl_seconds))
+
     return success_response(_serialize_qr(qr, include_image=with_image))
 
 
@@ -179,6 +191,10 @@ async def refresh_qr_code(
     db.add(qr)
     db.commit()
     db.refresh(qr)
+
+    redis_key = QR_REDIS_KEY.format(timetable_id=timetable_id)
+    ttl_seconds = (qr.expires_at - now).total_seconds()
+    redis_service.set_json(redis_key, _serialize_qr(qr), ex_seconds=int(ttl_seconds))
 
     await log_action(
         db,

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
+from app.core.email import email_service
 from app.core.response import success_response
 from app.schemas.auth import (
     AuthForgotPasswordRequest,
@@ -131,7 +132,10 @@ def logout(_=None):
 def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
-        return success_response(data={"reset_token": None}, message="If the email exists, reset instructions were sent")
+        return success_response(
+            data={"reset_sent": False},
+            message="If the email exists, reset instructions were sent",
+        )
 
     reset_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(reset_token.encode("utf-8")).hexdigest()
@@ -145,9 +149,11 @@ def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(ge
     )
     db.commit()
 
+    email_service.send_password_reset_email(payload.email, reset_token)
+
     return success_response(
-        data={"reset_token": reset_token},
-        message="Password reset token generated",
+        data={"reset_sent": True},
+        message="If the email exists, reset instructions were sent",
     )
 
 

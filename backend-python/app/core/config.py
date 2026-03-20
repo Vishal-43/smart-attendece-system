@@ -18,5 +18,17 @@ class Settings:
     
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+    SMTP_HOST = os.getenv("SMTP_HOST", None)
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USER = os.getenv("SMTP_USER", None)
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", None)
+    SMTP_FROM_ADDRESS = os.getenv("SMTP_FROM_ADDRESS", "noreply@smartattendance.com")
+    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Smart Attendance")
+
+    REDIS_HOST = os.getenv("REDIS_HOST", None)
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_DB = int(os.getenv("REDIS_DB", 0))
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
+
 
 settings = Settings()
