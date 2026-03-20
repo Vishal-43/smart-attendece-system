@@ -9,7 +9,7 @@ export default function AnalyticsPage() {
   const { data: summaryData, isLoading } = useAttendanceSummary({})
   const [divisionData, setDivisionData] = useState([])
 
-  const summary = summaryData?.data?.data || summaryData?.data || {}
+  const summary = summaryData?.data || {}
 
   useEffect(() => {
     const fetchDivisionAnalytics = async () => {

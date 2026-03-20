@@ -11,7 +11,7 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState({ username: '', email: '', role: 'STUDENT' })
 
-  const { data: users, isLoading } = useUsers({ page, limit: 10, search })
+  const { data: users, isLoading } = useUsers({ search })
   const createMutation = useCreateUser()
   const updateMutation = useUpdateUser(editingId)
   const deleteMutation = useDeleteUser()
@@ -117,29 +117,7 @@ export default function UsersPage() {
             <Loading />
           ) : (
             <>
-              <Table columns={columns} data={users?.data?.items || []} />
-
-              <div className="management__pagination">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <span className="management__page-info">
-                  Page {page} of {users?.data?.pages || 1}
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= (users?.data?.pages || 1)}
-                >
-                  <ChevronRight size={16} />
-                </Button>
-              </div>
+              <Table columns={columns} data={Array.isArray(users?.data) ? users.data : []} />
             </>
           )}
         </CardBody>

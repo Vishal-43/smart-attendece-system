@@ -21,8 +21,8 @@ export default function Header() {
         notificationsAPI.list({ page: 1, limit: 5 }),
         notificationsAPI.unreadCount(),
       ])
-      setNotifications(listRes?.data?.data?.items || [])
-      setUnreadCount(countRes?.data?.data?.unread_count || 0)
+      setNotifications(listRes?.data?.items || [])
+      setUnreadCount(countRes?.data?.unread_count || 0)
     } catch (error) {
       console.error('Failed to load notifications', error)
     }

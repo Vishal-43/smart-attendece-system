@@ -36,7 +36,7 @@ export default function AccessPointsPage() {
     setLoading(true)
     try {
       const data = await listLocations({ limit: 100 })
-      setLocations(data.data || data || [])
+      setLocations(Array.isArray(data) ? data : [])
     } catch (error) {
       toast.error('Failed to load locations')
     } finally {

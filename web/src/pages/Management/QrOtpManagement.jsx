@@ -95,7 +95,7 @@ export default function QrOtpManagement() {
   const fetchTimetables = async () => {
     try {
       const response = await timetablesAPI.listTimetables();
-      const data = response.data.data || response.data;
+      const data = response.data;
       setTimetables(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error('Failed to fetch timetables');
@@ -123,7 +123,7 @@ export default function QrOtpManagement() {
     
     try {
       const response = await qrAPI.getCurrent(selectedTimetable, { with_image: true });
-      const data = response.data.data || response.data;
+      const data = response.data;
       setQrData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
     } catch (error) {
@@ -139,7 +139,7 @@ export default function QrOtpManagement() {
     
     try {
       const response = await otpAPI.getCurrent(selectedTimetable);
-      const data = response.data.data || response.data;
+      const data = response.data;
       setOtpData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
     } catch (error) {
@@ -159,7 +159,7 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await qrAPI.generate(selectedTimetable, { ttl_minutes: 10 });
-      const data = response.data.data || response.data;
+      const data = response.data;
       setQrData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
       toast.success('QR Code generated successfully');
@@ -179,7 +179,7 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await otpAPI.generate(selectedTimetable, { ttl_minutes: 5 });
-      const data = response.data.data || response.data;
+      const data = response.data;
       setOtpData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
       toast.success('OTP generated successfully');
@@ -196,7 +196,7 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await qrAPI.refresh(selectedTimetable);
-      const data = response.data.data || response.data;
+      const data = response.data;
       setQrData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
       toast.success('QR Code refreshed');
@@ -213,7 +213,7 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await otpAPI.refresh(selectedTimetable);
-      const data = response.data.data || response.data;
+      const data = response.data;
       setOtpData(data);
       setTimeRemaining(calculateTimeRemaining(data.expires_at));
       toast.success('OTP refreshed');

@@ -8,10 +8,10 @@ export default function StudentReportPage() {
   const [selectedStudentId, setSelectedStudentId] = useState('')
 
   const { data: usersData } = useUsers({ role: 'STUDENT' })
-  const students = usersData?.data?.data || usersData?.data?.items || []
+  const students = usersData?.data || []
 
   const { data: reportData, isLoading } = useStudentReport(selectedStudentId)
-  const report = reportData?.data?.data || reportData?.data || {}
+  const report = reportData?.data || {}
 
   const columns = [
     { key: 'course_name', header: 'Course' },

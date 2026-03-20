@@ -13,13 +13,13 @@ export default function ClassReportPage() {
   const [sessionDate, setSessionDate] = useState('')
 
   const { data: timetablesData } = useTimetables()
-  const timetables = timetablesData?.data?.data || timetablesData?.data || []
+  const timetables = timetablesData?.data || []
 
   const { data: reportData, isLoading } = useClassReport(
     selectedTimetableId,
     sessionDate ? { session_date: sessionDate } : {}
   )
-  const report = reportData?.data?.data || reportData?.data || {}
+  const report = reportData?.data || {}
 
   const columns = [
     { key: 'student_name', header: 'Student Name' },

@@ -122,8 +122,9 @@ export const otpAPI = {
 // Access Points Endpoints
 export const accessPointsAPI = {
   listAccessPoints: (params) => apiClient.get('/access-points', { params }),
-  createAccessPoint: (locationId, data) =>
-    apiClient.post(`/access-points/${locationId}`, data),
+  getAccessPoint: (id) => apiClient.get(`/access-points/${id}`),
+  createAccessPoint: (data) => apiClient.post('/access-points', data),
+  updateAccessPoint: (id, data) => apiClient.put(`/access-points/${id}`, data),
   deleteAccessPoint: (id) => apiClient.delete(`/access-points/${id}`),
 }
 

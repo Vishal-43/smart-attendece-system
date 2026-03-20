@@ -27,7 +27,12 @@ apiClient.interceptors.request.use(
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data && typeof response.data === 'object' && 'data' in response.data && 'success' in response.data) {
+      response.data = response.data.data
+    }
+    return response
+  },
   async (error) => {
     const originalRequest = error.config
     const authStore = useAuthStore.getState()
@@ -40,7 +45,7 @@ apiClient.interceptors.response.use(
           refresh_token: authStore.refreshToken,
         })
 
-        const { access_token, refresh_token } = response.data
+        const { access_token, refresh_token } = response.data.data || response.data
         authStore.setTokens(access_token, refresh_token)
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`

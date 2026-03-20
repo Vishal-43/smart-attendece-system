@@ -14,14 +14,14 @@ export default function AttendanceReportsPage() {
   const [enableQuery, setEnableQuery] = useState(false)
 
   const { data: divisionsData } = useDivisions()
-  const divisions = divisionsData?.data?.data || divisionsData?.data || []
+  const divisions = divisionsData?.data || []
 
   const { data: reportData, isLoading } = useAttendanceSummary(filters, {
     enabled: enableQuery,
   })
   const exportMutation = useExportCSV()
 
-  const report = reportData?.data?.data || reportData?.data || {}
+  const report = reportData?.data || {}
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }))

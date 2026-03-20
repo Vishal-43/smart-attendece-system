@@ -12,7 +12,7 @@ export default function DashboardPage() {
     const fetchStats = async () => {
       try {
         const data = await getDashboardStats()
-        setSummary(data?.data || data || {})
+        setSummary(data || {})
       } finally {
         setIsLoading(false)
       }
