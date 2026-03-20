@@ -35,6 +35,6 @@ def test_preferences_create_and_update(client, student_token, student_user):
         json={"theme": "dark", "notification_email": False, "language": "en"},
     )
     assert update_response.status_code == status.HTTP_200_OK
-    body = update_response.json()
+    body = update_response.json()["data"]
     assert body["theme"] == "dark"
     assert body["notification_email"] is False

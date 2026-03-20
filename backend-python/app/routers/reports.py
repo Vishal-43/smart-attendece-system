@@ -51,7 +51,7 @@ def get_attendance_summary(
         query = query.filter(func.date(AttendanceRecord.marked_at) <= end_date)
     
     # If student, only show their own records
-    if current_user.role == 'student':
+    if current_user.role.value == 'student':
         query = query.filter(AttendanceRecord.student_id == current_user.id)
     
     # Apply division filter (join through timetable and enrollment)
@@ -79,7 +79,7 @@ def get_attendance_summary(
     }
     
     for row in results:
-        status = row.status.lower() if row.status else 'unknown'
+        status = row.status.value.lower() if row.status else 'unknown'
         count = row.count
         
         if status == 'present':
@@ -121,7 +121,7 @@ def get_student_report(
     Teachers/admins can view any student.
     """
     # Authorization: student can only view own, teachers/admins can view all
-    if current_user.role == 'student' and current_user.id != user_id:
+    if current_user.role.value == 'student' and current_user.id != user_id:
         from app.core.exceptions import ForbiddenError
         raise ForbiddenError()
     
@@ -232,7 +232,7 @@ def get_class_report(
         raise NotFoundError(message=f"Timetable with id {timetable_id} not found")
     
     # Authorization: teachers can only view their own timetables
-    if current_user.role == 'teacher' and timetable.teacher_id != current_user.id:
+    if current_user.role.value == 'teacher' and timetable.teacher_id != current_user.id:
         from app.core.exceptions import ForbiddenError
         raise ForbiddenError(message="You can only view attendance for your own classes")
     
@@ -315,12 +315,12 @@ def export_attendance_csv(
             raise NotFoundError(message=f"Timetable with id {timetable_id} not found")
         
         # Authorization check for teachers
-        if current_user.role == 'teacher' and timetable.teacher_id != current_user.id:
+        if current_user.role.value == 'teacher' and timetable.teacher_id != current_user.id:
             from app.core.exceptions import ForbiddenError
             raise ForbiddenError(message="You can only export your own classes")
         
         query = query.filter(AttendanceRecord.timetable_id == timetable_id)
-    elif current_user.role == 'teacher':
+    elif current_user.role.value == 'teacher':
         # If no timetable specified and user is teacher, only show their classes
         teacher_timetables = db.query(TimeTable.id).filter(TimeTable.teacher_id == current_user.id).all()
         timetable_ids = [t[0] for t in teacher_timetables]

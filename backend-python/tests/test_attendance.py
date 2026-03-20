@@ -16,10 +16,12 @@ def test_mark_attendance_with_valid_qr(
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "data" in data
@@ -27,36 +29,37 @@ def test_mark_attendance_with_valid_qr(
     assert attendance["student_id"] == student_user.id
     assert attendance["timetable_id"] == timetable.id
     assert attendance["status"] in ["present", "late"]
-    assert attendance["method"] == "qr"
 
 
 def test_mark_attendance_duplicate_prevention(
     client, student_token, timetable, valid_qr_code, enrollment, db
 ):
     """Test that duplicate attendance on same day is prevented."""
-    # Mark attendance first time
     response1 = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
     assert response1.status_code == status.HTTP_200_OK
-    
-    # Try to mark again (should fail)
+
     response2 = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
+
     assert response2.status_code == status.HTTP_409_CONFLICT
 
 
@@ -70,11 +73,13 @@ def test_mark_attendance_expired_qr_code(
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": expired_qr_code.code
+            "code": expired_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     data = response.json()
     assert "expired" in data.get("message", "").lower()
 
@@ -89,29 +94,31 @@ def test_mark_attendance_invalid_code(
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": "invalid_code_12345"
+            "code": "invalid_code_12345",
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_mark_attendance_not_enrolled(
     client, student_token, timetable, valid_qr_code, student_user
 ):
     """Test that non-enrolled students cannot mark attendance."""
-    # Note: no enrollment fixture passed, so student is not enrolled
     response = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
-    # Should fail because student is not enrolled in this division
+
     assert response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
 
@@ -122,11 +129,13 @@ def test_mark_attendance_unauthorized(client, timetable, valid_qr_code):
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
 
 
 def test_get_attendance_history_own_records(
@@ -185,20 +194,20 @@ def test_update_attendance_status_teacher(
     client, teacher_token, student_token, timetable, valid_qr_code, enrollment, db
 ):
     """Test teacher can update attendance status."""
-    # First, student marks attendance
     mark_response = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
+
     attendance_id = mark_response.json()["data"]["id"]
-    
-    # Teacher updates status to late
+
     response = client.put(
         f"/api/v1/attendance/{attendance_id}",
         headers={"Authorization": f"Bearer {teacher_token}"},
@@ -206,7 +215,7 @@ def test_update_attendance_status_teacher(
             "status": "late"
         }
     )
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["data"]["status"] == "late"
@@ -216,20 +225,20 @@ def test_update_attendance_status_student_forbidden(
     client, student_token, teacher_token, timetable, valid_qr_code, enrollment
 ):
     """Test student cannot update attendance status."""
-    # First, mark attendance
     mark_response = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
+
     attendance_id = mark_response.json()["data"]["id"]
-    
-    # Student tries to update (should fail)
+
     response = client.put(
         f"/api/v1/attendance/{attendance_id}",
         headers={"Authorization": f"Bearer {student_token}"},

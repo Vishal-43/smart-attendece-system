@@ -49,26 +49,26 @@ def test_attendance_summary_student_only_sees_own(
     client, student_token, student_user, timetable, valid_qr_code, enrollment, db
 ):
     """Test that student only sees their own attendance in summary."""
-    # Mark attendance first
-    client.post(
+    mark_response = client.post(
         "/api/v1/attendance/mark",
         headers={"Authorization": f"Bearer {student_token}"},
         json={
             "timetable_id": timetable.id,
             "method": "qr",
-            "code": valid_qr_code.code
+            "code": valid_qr_code.code,
+            "latitude": 12.9716,
+            "longitude": 77.5946,
         }
     )
-    
-    # Get summary
+    assert mark_response.status_code == status.HTTP_200_OK
+
     response = client.get(
         "/api/v1/reports/attendance-summary",
         headers={"Authorization": f"Bearer {student_token}"}
     )
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    # Student should see their own record
     assert data["data"]["total"] >= 1
 
 

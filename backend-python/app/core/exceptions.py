@@ -12,8 +12,13 @@ from app.core.response import error_response
 # ── Custom exception classes ────────────────────────────────────────────────
 
 class NotFoundError(Exception):
-    def __init__(self, resource: str, id: Any):
-        self.message = f"{resource} with id '{id}' not found."
+    def __init__(self, resource: str = None, id: Any = None, message: str = None):
+        if message:
+            self.message = message
+        elif resource and id is not None:
+            self.message = f"{resource} with id '{id}' not found."
+        else:
+            self.message = "Resource not found."
         super().__init__(self.message)
 
 
