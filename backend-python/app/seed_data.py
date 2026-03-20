@@ -6,6 +6,7 @@ Run: python app/seed_data.py
 from datetime import datetime, date, time, timedelta
 from app.database.database import engine, SessionLocal, Base
 from app.database.user import User, UserRole
+from app.security.password import hash_password
 from app.database.courses import Course
 from app.database.branches import Branch
 from app.database.divisions import Division
@@ -36,7 +37,7 @@ def seed_users(session):
         admin = User(
             email="admin@smartattendance.com",
             username="admin",
-            password_hash="$2b$12$hashed_password_admin",  # In real app, use proper hashing
+            password_hash=hash_password("admin123", "admin"),
             first_name="Admin",
             last_name="User",
             phone="9999999999",
@@ -48,7 +49,7 @@ def seed_users(session):
         teacher1 = User(
             email="teacher1@smartattendance.com",
             username="teacher1",
-            password_hash="$2b$12$hashed_password_teacher1",
+            password_hash=hash_password("teacher123", "teacher1"),
             first_name="Rajesh",
             last_name="Kumar",
             phone="9876543210",
@@ -59,7 +60,7 @@ def seed_users(session):
         teacher2 = User(
             email="teacher2@smartattendance.com",
             username="teacher2",
-            password_hash="$2b$12$hashed_password_teacher2",
+            password_hash=hash_password("teacher123", "teacher2"),
             first_name="Priya",
             last_name="Sharma",
             phone="9876543211",
@@ -71,7 +72,7 @@ def seed_users(session):
         student1 = User(
             email="student1@smartattendance.com",
             username="student1",
-            password_hash="$2b$12$hashed_password_student1",
+            password_hash=hash_password("student123", "student1"),
             first_name="Aditya",
             last_name="Singh",
             phone="9876543220",
@@ -82,7 +83,7 @@ def seed_users(session):
         student2 = User(
             email="student2@smartattendance.com",
             username="student2",
-            password_hash="$2b$12$hashed_password_student2",
+            password_hash=hash_password("student123", "student2"),
             first_name="Neha",
             last_name="Verma",
             phone="9876543221",
@@ -93,7 +94,7 @@ def seed_users(session):
         student3 = User(
             email="student3@smartattendance.com",
             username="student3",
-            password_hash="$2b$12$hashed_password_student3",
+            password_hash=hash_password("student123", "student3"),
             first_name="Rohan",
             last_name="Patel",
             phone="9876543222",

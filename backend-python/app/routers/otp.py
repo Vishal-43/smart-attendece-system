@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
+from app.core.config import settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.response import success_response
 from app.database.otp_code import OTPCode
@@ -26,13 +27,10 @@ from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/v1/otp", tags=["OTP Codes"])
 
-_DEFAULT_TTL_MINUTES = 5
-_OTP_LENGTH = 6
-
 
 def _make_otp() -> str:
-    """Return a random *_OTP_LENGTH*-digit numeric string."""
-    return "".join(random.choices(string.digits, k=_OTP_LENGTH))
+    """Return a random OTP_LENGTH-digit numeric string."""
+    return "".join(random.choices(string.digits, k=settings.OTP_LENGTH))
 
 
 def _serialize_otp(otp: OTPCode) -> dict:
@@ -55,7 +53,7 @@ def _serialize_otp(otp: OTPCode) -> dict:
 async def generate_otp(
     timetable_id: int,
     request: Request,
-    ttl_minutes: int = Query(_DEFAULT_TTL_MINUTES, ge=1, le=60,
+    ttl_minutes: int = Query(settings.OTP_DEFAULT_TTL_MINUTES, ge=1, le=60,
                              description="OTP validity in minutes"),
     current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
     db: Session = Depends(get_db),
@@ -72,7 +70,6 @@ async def generate_otp(
         raise ForbiddenError("You can only generate OTPs for your own timetables")
 
     now = datetime.utcnow()
-    # Expire any still-valid OTPs for this timetable
     db.query(OTPCode).filter(
         OTPCode.timetable_id == timetable_id,
         OTPCode.expires_at > now,
@@ -118,7 +115,7 @@ async def get_current_otp(
         raise NotFoundError("Timetable not found")
 
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
-        raise ForbiddenError("You are not the teacher for this timetable")
+        raise ForbiddenError("You can only generate OTPs for your own timetables")
 
     now = datetime.utcnow()
     otp = (
@@ -141,7 +138,7 @@ async def get_current_otp(
 async def refresh_otp(
     timetable_id: int,
     request: Request,
-    ttl_minutes: int = Query(_DEFAULT_TTL_MINUTES, ge=1, le=60),
+    ttl_minutes: int = Query(settings.OTP_DEFAULT_TTL_MINUTES, ge=1, le=60),
     current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
     db: Session = Depends(get_db),
 ):
@@ -151,7 +148,7 @@ async def refresh_otp(
         raise NotFoundError("Timetable not found")
 
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
-        raise ForbiddenError("You are not the teacher for this timetable")
+        raise ForbiddenError("You can only generate OTPs for your own timetables")
 
     now = datetime.utcnow()
     db.query(OTPCode).filter(

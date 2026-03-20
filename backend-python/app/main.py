@@ -28,6 +28,7 @@ from app.core.exceptions import (
     validation_handler,
 )
 from app.routers import (
+    access_points,
     auth,
     attendance,
     batches,
@@ -57,9 +58,11 @@ logger = logging.getLogger("smartattendance.request")
 def _load_allowed_origins() -> list[str]:
     raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
     allowed_origins: list[str] = []
+    has_wildcard = False
     for origin in [item.strip() for item in raw_origins.split(",") if item.strip()]:
         if origin == "*":
             allowed_origins.append(origin)
+            has_wildcard = True
             continue
         parsed = urlparse(origin)
         if parsed.scheme in {"http", "https"} and parsed.netloc:
@@ -69,6 +72,12 @@ def _load_allowed_origins() -> list[str]:
 
     if not allowed_origins:
         allowed_origins = ["http://localhost:5173", "http://localhost:3000"]
+    
+    if has_wildcard:
+        logger.warning(
+            "CORS wildcard (*) is set. This is insecure for production."
+        )
+    
     return allowed_origins
 
 
@@ -173,6 +182,7 @@ app.add_exception_handler(Exception, generic_handler)
 # ---------------------------------------------------------------------------
 app.include_router(health.router)   # GET /health  (no version prefix)
 
+app.include_router(access_points.router)
 app.include_router(auth.router)
 app.include_router(attendance.router)
 app.include_router(batches.router)

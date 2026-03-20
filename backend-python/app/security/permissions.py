@@ -1,16 +1,9 @@
-from enum import Enum
 from typing import Callable
 
 from fastapi import Depends, HTTPException, status
 
 from app.core.dependencies import get_current_user
-from app.database.user import User, UserRole as DBUserRole
-
-
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    TEACHER = "teacher"
-    STUDENT = "student"
+from app.database.user import User, UserRole
 
 
 def require_role(*roles: UserRole) -> Callable:

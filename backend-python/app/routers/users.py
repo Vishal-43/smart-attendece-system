@@ -2,6 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_admin
+from app.core.response import success_response
 from app.schemas.auth import PasswordChangeRequest
 from app.schemas.user_preferences import UserPreferencesOut, UserPreferencesUpdate
 from app.schemas.user import UserCreate, UserUpdate, UserOut
@@ -14,12 +15,40 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 
-@router.get("/", response_model=list[UserOut], dependencies=[Depends(require_admin)])
-def list_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+def _serialize_user(user: User) -> dict:
+    return {
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone": user.phone,
+        "role": user.role.value,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
 
 
-@router.get("/{user_id}", response_model=UserOut)
+def _serialize_prefs(prefs: UserPreferences) -> dict:
+    return {
+        "id": prefs.id,
+        "user_id": prefs.user_id,
+        "theme": prefs.theme.value if prefs.theme else "system",
+        "notification_email": prefs.notification_email,
+        "language": prefs.language.value if prefs.language else "en",
+        "created_at": prefs.created_at.isoformat() if prefs.created_at else None,
+        "updated_at": prefs.updated_at.isoformat() if prefs.updated_at else None,
+    }
+
+
+@router.get("/")
+def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
+    users = db.query(User).all()
+    return success_response([_serialize_user(u) for u in users], "Users retrieved successfully")
+
+
+@router.get("/{user_id}")
 def get_user(
     user_id: int, db: Session = Depends(get_db), curr_user=Depends(get_current_user)
 ):
@@ -33,11 +62,11 @@ def get_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user",
         )
-    return user
+    return success_response(_serialize_user(user), "User retrieved successfully")
 
 
-@router.post("/", response_model=UserOut, dependencies=[Depends(require_admin)])
-def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
+@router.post("/")
+def create_user(user_in: UserCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(User).filter(User.email == user_in.email).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -55,10 +84,10 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+    return success_response(_serialize_user(new_user), "User created successfully", 201)
 
 
-@router.put("/{user_id}", response_model=UserOut)
+@router.put("/{user_id}")
 def update_user(
     user_id: int,
     user_in: UserUpdate,
@@ -84,7 +113,7 @@ def update_user(
 
     db.commit()
     db.refresh(db_user)
-    return db_user
+    return success_response(_serialize_user(db_user), "User updated successfully")
 
 
 @router.put("/{user_id}/password")
@@ -107,10 +136,10 @@ def update_user_password(
     db_user.password_hash = hash_password(payload.new_password, db_user.username)
     db.commit()
 
-    return {"success": True, "message": "Password updated successfully"}
+    return success_response(None, "Password updated successfully")
 
 
-@router.get("/{user_id}/preferences", response_model=UserPreferencesOut)
+@router.get("/{user_id}/preferences")
 def get_user_preferences(
     user_id: int,
     db: Session = Depends(get_db),
@@ -125,10 +154,10 @@ def get_user_preferences(
         db.add(prefs)
         db.commit()
         db.refresh(prefs)
-    return prefs
+    return success_response(_serialize_prefs(prefs), "Preferences retrieved successfully")
 
 
-@router.put("/{user_id}/preferences", response_model=UserPreferencesOut)
+@router.put("/{user_id}/preferences")
 def update_user_preferences(
     user_id: int,
     payload: UserPreferencesUpdate,
@@ -149,7 +178,7 @@ def update_user_preferences(
 
     db.commit()
     db.refresh(prefs)
-    return prefs
+    return success_response(_serialize_prefs(prefs), "Preferences updated successfully")
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

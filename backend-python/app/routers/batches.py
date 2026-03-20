@@ -1,34 +1,50 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, require_admin
+from app.core.response import success_response
 from app.schemas.batches import BatchCreate, BatchOut, BatchUpdate
 from app.database.batches import Batch
 
 router = APIRouter(prefix="/api/v1/batches", tags=["batches"])
 
 
-@router.get("/", response_model=list[BatchOut])
+def _serialize_batch(batch: Batch) -> dict:
+    return {
+        "id": batch.id,
+        "division_id": batch.division_id,
+        "name": batch.name,
+        "batch_number": batch.batch_number,
+        "semester": batch.semester,
+        "academic_year": batch.academic_year,
+        "created_at": batch.created_at.isoformat() if batch.created_at else None,
+        "updated_at": batch.updated_at.isoformat() if batch.updated_at else None,
+    }
+
+
+@router.get("/")
 def list_all_batches(db: Session = Depends(get_db)):
-    return db.query(Batch).all()
+    batches = db.query(Batch).all()
+    return success_response([_serialize_batch(b) for b in batches], "Batches retrieved successfully")
 
 
-@router.get("/division/{division_id}", response_model=list[BatchOut])
+@router.get("/division/{division_id}")
 def list_batches_by_division(division_id: int, db: Session = Depends(get_db)):
-    return db.query(Batch).filter(Batch.division_id == division_id).all()
+    batches = db.query(Batch).filter(Batch.division_id == division_id).all()
+    return success_response([_serialize_batch(b) for b in batches], "Batches retrieved successfully")
 
 
-@router.get("/{batch_id}", response_model=BatchOut)
+@router.get("/{batch_id}")
 def get_batch(batch_id: int, db: Session = Depends(get_db)):
     batch = db.query(Batch).filter(Batch.id == batch_id).first()
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found"
         )
-    return batch
+    return success_response(_serialize_batch(batch), "Batch retrieved successfully")
 
 
-@router.post("/", response_model=BatchOut, dependencies=[Depends(require_admin)])
-def create_batch(batch_in: BatchCreate, db: Session = Depends(get_db)):
+@router.post("/")
+def create_batch(batch_in: BatchCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     new_batch = Batch(
         division_id=batch_in.division_id,
         name=batch_in.name,
@@ -39,13 +55,11 @@ def create_batch(batch_in: BatchCreate, db: Session = Depends(get_db)):
     db.add(new_batch)
     db.commit()
     db.refresh(new_batch)
-    return new_batch
+    return success_response(_serialize_batch(new_batch), "Batch created successfully", 201)
 
 
-@router.put(
-    "/{batch_id}", response_model=BatchOut, dependencies=[Depends(require_admin)]
-)
-def update_batch(batch_id: int, batch_in: BatchUpdate, db: Session = Depends(get_db)):
+@router.put("/{batch_id}")
+def update_batch(batch_id: int, batch_in: BatchUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
     db_batch = db.query(Batch).filter(Batch.id == batch_id).first()
     if not db_batch:
         raise HTTPException(
@@ -56,15 +70,11 @@ def update_batch(batch_id: int, batch_in: BatchUpdate, db: Session = Depends(get
         setattr(db_batch, key, value)
     db.commit()
     db.refresh(db_batch)
-    return db_batch
+    return success_response(_serialize_batch(db_batch), "Batch updated successfully")
 
 
-@router.delete(
-    "/{batch_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)],
-)
-def delete_batch(batch_id: int, db: Session = Depends(get_db)):
+@router.delete("/{batch_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_batch(batch_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     db_batch = db.query(Batch).filter(Batch.id == batch_id).first()
     if not db_batch:
         raise HTTPException(

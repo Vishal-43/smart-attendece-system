@@ -10,7 +10,7 @@ class APIResponse(BaseModel, Generic[T]):
     data: Optional[T] = None
 
 
-def success_response(data: Any = None, message: str = "Success") -> dict:
+def success_response(data: Any = None, message: str = "Success", status_code: int = 200) -> dict:
     return {"success": True, "message": message, "data": data}
 
 

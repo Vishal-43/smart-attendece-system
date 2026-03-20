@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
+from app.core.response import success_response
 from app.schemas.auth import (
     AuthForgotPasswordRequest,
     AuthLoginRequest,
     AuthLoginResponse,
-    AuthLogoutRequest,
     AuthRegisterRequest,
     AuthResetPasswordRequest,
     AuthTokens,
@@ -45,20 +45,24 @@ def register(payload: AuthRegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return AuthLoginResponse(
-        access_token=create_access_token({"sub": str(user.id)}),
-        refresh_token=create_refresh_token({"sub": str(user.id)}),
-        user=UserPublic(
-            id=user.id,
-            email=user.email,
-            username=user.username,
-            role=user.role.value,
-            is_active=user.is_active,
-        ),
+    return success_response(
+        data={
+            "access_token": create_access_token({"sub": str(user.id)}),
+            "refresh_token": create_refresh_token({"sub": str(user.id)}),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "role": user.role.value,
+                "is_active": user.is_active,
+            },
+        },
+        message="Registration successful",
+        status_code=201,
     )
 
 
-@router.post("/login", response_model=AuthLoginResponse)
+@router.post("/login")
 def login(credentials: AuthLoginRequest, db: Session = Depends(get_db)):
     user = None
     if credentials.email:
@@ -76,20 +80,23 @@ def login(credentials: AuthLoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})
 
-    return AuthLoginResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        user=UserPublic(
-            id=user.id,
-            email=user.email,
-            username=user.username,
-            role=user.role.value,
-            is_active=user.is_active,
-        ),
+    return success_response(
+        data={
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "role": user.role.value,
+                "is_active": user.is_active,
+            },
+        },
+        message="Login successful",
     )
 
 
-@router.post("/refresh", response_model=AuthTokens)
+@router.post("/refresh")
 def refresh_token(request: TokenRefreshRequest, db: Session = Depends(get_db)):
     try:
         payload = decode_token(request.refresh_token)
@@ -106,22 +113,25 @@ def refresh_token(request: TokenRefreshRequest, db: Session = Depends(get_db)):
     access_token = create_access_token({"sub": str(user.id)})
     new_refresh_token = create_refresh_token({"sub": str(user.id)})
 
-    return AuthTokens(access_token=access_token, refresh_token=new_refresh_token)
+    return success_response(
+        data={
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+        },
+        message="Token refreshed successfully",
+    )
 
 
 @router.post("/logout")
-def logout(_: AuthLogoutRequest | None = None):
-    # Stateless JWT tokens are not persisted server-side in current architecture.
-    # Keep endpoint for API contract compatibility with web/mobile clients.
-    return {"success": True, "message": "Logged out successfully"}
+def logout(_=None):
+    return success_response(None, "Logged out successfully")
 
 
 @router.post("/forgot-password")
 def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    # Avoid user enumeration by always returning the same response.
     if not user:
-        return {"success": True, "message": "If the email exists, reset instructions were sent"}
+        return success_response(data={"reset_token": None}, message="If the email exists, reset instructions were sent")
 
     reset_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(reset_token.encode("utf-8")).hexdigest()
@@ -135,11 +145,10 @@ def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(ge
     )
     db.commit()
 
-    return {
-        "success": True,
-        "message": "Password reset token generated",
-        "data": {"reset_token": reset_token},
-    }
+    return success_response(
+        data={"reset_token": reset_token},
+        message="Password reset token generated",
+    )
 
 
 @router.post("/reset-password")
@@ -167,20 +176,29 @@ def reset_password(payload: AuthResetPasswordRequest, db: Session = Depends(get_
     reset_entry.used_at = now
     db.commit()
 
-    return {"success": True, "message": "Password has been reset"}
+    return success_response(None, "Password has been reset")
 
 
-@router.get("/me", response_model=UserPublic)
+@router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
-    return UserPublic(
-        id=current_user.id,
-        email=current_user.email,
-        username=current_user.username,
-        role=current_user.role.value,
-        is_active=current_user.is_active,
+    return success_response(
+        data={
+            "id": current_user.id,
+            "email": current_user.email,
+            "username": current_user.username,
+            "first_name": current_user.first_name,
+            "last_name": current_user.last_name,
+            "phone": current_user.phone,
+            "role": current_user.role.value,
+            "is_active": current_user.is_active,
+        },
+        message="User retrieved successfully",
     )
 
 
 @router.post("/is-admin")
-def is_admin(user=Depends(get_current_user)):
-    return {"is_admin": user.role.value == "admin"}
+def is_admin(current_user: User = Depends(get_current_user)):
+    return success_response(
+        data={"is_admin": current_user.role.value == "admin"},
+        message="Admin check completed",
+    )

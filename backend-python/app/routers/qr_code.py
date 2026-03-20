@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
+from app.core.config import settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.response import success_response
 from app.database.qr_codes import QRCode
@@ -27,9 +28,6 @@ from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/api/v1/qr", tags=["QR Codes"])
-
-# Default code validity in minutes
-_DEFAULT_TTL_MINUTES = 10
 
 
 def _generate_qr_image(data: str) -> str:
@@ -63,7 +61,7 @@ def _serialize_qr(qr: QRCode, include_image: bool = False) -> dict:
 async def generate_qr_code(
     timetable_id: int,
     request: Request,
-    ttl_minutes: int = Query(_DEFAULT_TTL_MINUTES, ge=1, le=120,
+    ttl_minutes: int = Query(settings.QR_DEFAULT_TTL_MINUTES, ge=1, le=120,
                              description="Code validity in minutes"),
     current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
     db: Session = Depends(get_db),
@@ -82,7 +80,6 @@ async def generate_qr_code(
         raise ForbiddenError("You can only generate codes for your own timetables")
 
     now = datetime.utcnow()
-    # Expire any existing codes for this timetable
     db.query(QRCode).filter(
         QRCode.timetable_id == timetable_id,
         QRCode.expires_at > now,
@@ -153,7 +150,7 @@ async def get_current_qr(
 async def refresh_qr_code(
     timetable_id: int,
     request: Request,
-    ttl_minutes: int = Query(_DEFAULT_TTL_MINUTES, ge=1, le=120),
+    ttl_minutes: int = Query(settings.QR_DEFAULT_TTL_MINUTES, ge=1, le=120),
     current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
     db: Session = Depends(get_db),
 ):
@@ -163,10 +160,9 @@ async def refresh_qr_code(
         raise NotFoundError("Timetable not found")
 
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
-        raise ForbiddenError("You are not the teacher for this timetable")
+        raise ForbiddenError("You can only generate codes for your own timetables")
 
     now = datetime.utcnow()
-    # Expire existing codes
     db.query(QRCode).filter(
         QRCode.timetable_id == timetable_id,
         QRCode.expires_at > now,

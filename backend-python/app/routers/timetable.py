@@ -75,38 +75,42 @@ def get_my_schedule(
     return success_response(_serialize_timetables(items), "My schedule retrieved successfully")
 
 
-@router.get("/", response_model=list[TimeTableOut])
+@router.get("/")
 def list_all_timetables(db: Session = Depends(get_db)):
-    return db.query(Timetable).all()
+    timetables = db.query(Timetable).all()
+    return success_response(_serialize_timetables(timetables), "Timetables retrieved successfully")
 
 
-@router.get("/{timetable_id}", response_model=TimeTableOut)
+@router.get("/{timetable_id}")
 def get_timetable(timetable_id: int, db: Session = Depends(get_db)):
     timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
     if not timetable:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Timetable not found"
         )
-    return timetable
+    return success_response(_serialize_timetables([timetable])[0], "Timetable retrieved successfully")
 
 
-@router.get("/division/{division_id}", response_model=list[TimeTableOut])
+@router.get("/division/{division_id}")
 def list_timetables_by_division(division_id: int, db: Session = Depends(get_db)):
-    return db.query(Timetable).filter(Timetable.division_id == division_id).all()
+    timetables = db.query(Timetable).filter(Timetable.division_id == division_id).all()
+    return success_response(_serialize_timetables(timetables), "Timetables retrieved successfully")
 
 
-@router.get("/teacher/{teacher_id}", response_model=list[TimeTableOut])
+@router.get("/teacher/{teacher_id}")
 def list_timetables_by_teacher(teacher_id: int, db: Session = Depends(get_db)):
-    return db.query(Timetable).filter(Timetable.teacher_id == teacher_id).all()
+    timetables = db.query(Timetable).filter(Timetable.teacher_id == teacher_id).all()
+    return success_response(_serialize_timetables(timetables), "Timetables retrieved successfully")
 
 
-@router.get("/location/{location_id}", response_model=list[TimeTableOut])
+@router.get("/location/{location_id}")
 def list_timetables_by_location(location_id: int, db: Session = Depends(get_db)):
-    return db.query(Timetable).filter(Timetable.location_id == location_id).all()
+    timetables = db.query(Timetable).filter(Timetable.location_id == location_id).all()
+    return success_response(_serialize_timetables(timetables), "Timetables retrieved successfully")
 
 
-@router.post("/", response_model=TimeTableOut, dependencies=[Depends(require_admin)])
-def create_timetable(timetable_in: TimeTableCreate, db: Session = Depends(get_db)):
+@router.post("/")
+def create_timetable(timetable_in: TimeTableCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     conflict = (
         db.query(Timetable)
         .filter(
@@ -130,16 +134,12 @@ def create_timetable(timetable_in: TimeTableCreate, db: Session = Depends(get_db
     db.add(new_timetable)
     db.commit()
     db.refresh(new_timetable)
-    return new_timetable
+    return success_response(_serialize_timetables([new_timetable])[0], "Timetable created successfully", 201)
 
 
-@router.put(
-    "/{timetable_id}",
-    response_model=TimeTableOut,
-    dependencies=[Depends(require_admin)],
-)
+@router.put("/{timetable_id}")
 def update_timetable(
-    timetable_id: int, timetable_in: TimeTableUpdate, db: Session = Depends(get_db)
+    timetable_id: int, timetable_in: TimeTableUpdate, db: Session = Depends(get_db), _=Depends(require_admin)
 ):
     db_timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
     if not db_timetable:
@@ -151,15 +151,11 @@ def update_timetable(
         setattr(db_timetable, key, value)
     db.commit()
     db.refresh(db_timetable)
-    return db_timetable
+    return success_response(_serialize_timetables([db_timetable])[0], "Timetable updated successfully")
 
 
-@router.delete(
-    "/{timetable_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)],
-)
-def delete_timetable(timetable_id: int, db: Session = Depends(get_db)):
+@router.delete("/{timetable_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_timetable(timetable_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     db_timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
     if not db_timetable:
         raise HTTPException(

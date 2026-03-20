@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, require_admin
+from app.core.response import success_response
 from app.schemas.divisions import DivisionCreate, DivisionUpdate, DivisionOut
 from app.database.divisions import Division
 from app.database.branches import Branch
@@ -8,28 +9,44 @@ from app.database.branches import Branch
 router = APIRouter(prefix="/api/v1/divisions", tags=["divisions"])
 
 
-@router.get("/", response_model=list[DivisionOut])
+def _serialize_division(division: Division) -> dict:
+    return {
+        "id": division.id,
+        "branch_id": division.branch_id,
+        "name": division.name,
+        "year": division.year,
+        "semester": division.semester,
+        "academic_year": division.academic_year,
+        "capacity": division.capacity,
+        "created_at": division.created_at.isoformat() if division.created_at else None,
+        "updated_at": division.updated_at.isoformat() if division.updated_at else None,
+    }
+
+
+@router.get("/")
 def list_all_divisions(db: Session = Depends(get_db)):
-    return db.query(Division).all()
+    divisions = db.query(Division).all()
+    return success_response([_serialize_division(d) for d in divisions], "Divisions retrieved successfully")
 
 
-@router.get("/branch/{branch_id}", response_model=list[DivisionOut])
+@router.get("/branch/{branch_id}")
 def list_divisions_by_branch(branch_id: int, db: Session = Depends(get_db)):
-    return db.query(Division).filter(Division.branch_id == branch_id).all()
+    divisions = db.query(Division).filter(Division.branch_id == branch_id).all()
+    return success_response([_serialize_division(d) for d in divisions], "Divisions retrieved successfully")
 
 
-@router.get("/{division_id}", response_model=DivisionOut)
+@router.get("/{division_id}")
 def get_division(division_id: int, db: Session = Depends(get_db)):
     division = db.query(Division).filter(Division.id == division_id).first()
     if not division:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Division not found"
         )
-    return division
+    return success_response(_serialize_division(division), "Division retrieved successfully")
 
 
-@router.post("/", response_model=DivisionOut, dependencies=[Depends(require_admin)])
-def create_division(division_in: DivisionCreate, db: Session = Depends(get_db)):
+@router.post("/")
+def create_division(division_in: DivisionCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     branch = db.query(Branch).filter(Branch.id == division_in.branch_id).first()
     if not branch:
         raise HTTPException(
@@ -46,14 +63,12 @@ def create_division(division_in: DivisionCreate, db: Session = Depends(get_db)):
     db.add(new_division)
     db.commit()
     db.refresh(new_division)
-    return new_division
+    return success_response(_serialize_division(new_division), "Division created successfully", 201)
 
 
-@router.put(
-    "/{division_id}", response_model=DivisionOut, dependencies=[Depends(require_admin)]
-)
+@router.put("/{division_id}")
 def update_division(
-    division_id: int, division_in: DivisionUpdate, db: Session = Depends(get_db)
+    division_id: int, division_in: DivisionUpdate, db: Session = Depends(get_db), _=Depends(require_admin)
 ):
     db_division = db.query(Division).filter(Division.id == division_id).first()
     if not db_division:
@@ -65,15 +80,11 @@ def update_division(
         setattr(db_division, key, value)
     db.commit()
     db.refresh(db_division)
-    return db_division
+    return success_response(_serialize_division(db_division), "Division updated successfully")
 
 
-@router.delete(
-    "/{division_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)],
-)
-def delete_division(division_id: int, db: Session = Depends(get_db)):
+@router.delete("/{division_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_division(division_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     db_division = db.query(Division).filter(Division.id == division_id).first()
     if not db_division:
         raise HTTPException(

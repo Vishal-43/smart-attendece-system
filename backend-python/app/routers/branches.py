@@ -1,34 +1,49 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, require_admin
+from app.core.response import success_response
 from app.schemas.branches import BranchCreate, BranchOut, BranchUpdate
 from app.database.branches import Branch
 
 router = APIRouter(prefix="/api/v1/branches", tags=["branches"])
 
 
-@router.get("/", response_model=list[BranchOut])
+def _serialize_branch(branch: Branch) -> dict:
+    return {
+        "id": branch.id,
+        "course_id": branch.course_id,
+        "name": branch.name,
+        "code": branch.code,
+        "branch_code": branch.branch_code,
+        "created_at": branch.created_at.isoformat() if branch.created_at else None,
+        "updated_at": branch.updated_at.isoformat() if branch.updated_at else None,
+    }
+
+
+@router.get("/")
 def list_all_branches(db: Session = Depends(get_db)):
-    return db.query(Branch).all()
+    branches = db.query(Branch).all()
+    return success_response([_serialize_branch(b) for b in branches], "Branches retrieved successfully")
 
 
-@router.get("/course/{course_id}", response_model=list[BranchOut])
+@router.get("/course/{course_id}")
 def list_branches_by_course(course_id: int, db: Session = Depends(get_db)):
-    return db.query(Branch).filter(Branch.course_id == course_id).all()
+    branches = db.query(Branch).filter(Branch.course_id == course_id).all()
+    return success_response([_serialize_branch(b) for b in branches], "Branches retrieved successfully")
 
 
-@router.get("/{branch_id}", response_model=BranchOut)
+@router.get("/{branch_id}")
 def get_branch(branch_id: int, db: Session = Depends(get_db)):
     branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not branch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Branch not found"
         )
-    return branch
+    return success_response(_serialize_branch(branch), "Branch retrieved successfully")
 
 
-@router.post("/", response_model=BranchOut, dependencies=[Depends(require_admin)])
-def create_branch(branch_in: BranchCreate, db: Session = Depends(get_db)):
+@router.post("/")
+def create_branch(branch_in: BranchCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(Branch).filter(Branch.code == branch_in.code).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,14 +63,12 @@ def create_branch(branch_in: BranchCreate, db: Session = Depends(get_db)):
     db.add(new_branch)
     db.commit()
     db.refresh(new_branch)
-    return new_branch
+    return success_response(_serialize_branch(new_branch), "Branch created successfully", 201)
 
 
-@router.put(
-    "/{branch_id}", response_model=BranchOut, dependencies=[Depends(require_admin)]
-)
+@router.put("/{branch_id}")
 def update_branch(
-    branch_id: int, branch_in: BranchUpdate, db: Session = Depends(get_db)
+    branch_id: int, branch_in: BranchUpdate, db: Session = Depends(get_db), _=Depends(require_admin)
 ):
     db_branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not db_branch:
@@ -90,15 +103,11 @@ def update_branch(
         setattr(db_branch, key, value)
     db.commit()
     db.refresh(db_branch)
-    return db_branch
+    return success_response(_serialize_branch(db_branch), "Branch updated successfully")
 
 
-@router.delete(
-    "/{branch_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_admin)],
-)
-def delete_branch(branch_id: int, db: Session = Depends(get_db)):
+@router.delete("/{branch_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_branch(branch_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     db_branch = db.query(Branch).filter(Branch.id == branch_id).first()
     if not db_branch:
         raise HTTPException(
