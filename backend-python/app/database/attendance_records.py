@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
@@ -25,10 +25,10 @@ class AttendanceRecord(Base):
     division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False)
     batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
     location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
-    marked_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    marked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     status = Column(Enum(AttendanceStatus), nullable=False)
     device_info = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False
     )

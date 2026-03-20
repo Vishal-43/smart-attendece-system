@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional
 import math
 
@@ -110,7 +110,7 @@ async def mark_attendance(
         raise ForbiddenError("You are not enrolled in this division")
 
     # 3. No duplicate attendance for today's session
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
     duplicate = (
         db.query(AttendanceRecord)
         .filter(
@@ -124,7 +124,7 @@ async def mark_attendance(
         raise ConflictError("Attendance already marked for this session today")
 
     # 4. Validate code and expiry
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if method == "qr":
         entry = (
             db.query(QRCode)
@@ -335,7 +335,7 @@ async def update_attendance_record(
 
     old_status = record.status.value if record.status else None
     record.status = AttendanceStatus(new_status_str)
-    record.updated_at = datetime.utcnow()
+    record.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
     db.refresh(record)
 

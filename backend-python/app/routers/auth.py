@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
@@ -144,7 +145,7 @@ def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(ge
         PasswordResetToken(
             user_id=user.id,
             token_hash=token_hash,
-            expires_at=datetime.utcnow() + timedelta(minutes=30),
+            expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=30),
         )
     )
     db.commit()
@@ -160,7 +161,7 @@ def forgot_password(payload: AuthForgotPasswordRequest, db: Session = Depends(ge
 @router.post("/reset-password")
 def reset_password(payload: AuthResetPasswordRequest, db: Session = Depends(get_db)):
     token_hash = hashlib.sha256(payload.token.encode("utf-8")).hexdigest()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     reset_entry = (
         db.query(PasswordResetToken)

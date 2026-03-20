@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 
@@ -11,6 +11,6 @@ class OTPCode(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     timetable_id = Column(Integer, ForeignKey("timetables.id"), nullable=False)
     code = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used_count = Column(Integer, default=0, nullable=False)

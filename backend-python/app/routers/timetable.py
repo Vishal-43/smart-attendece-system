@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -49,7 +49,7 @@ def get_today_timetable(
         4: DayOfWeek.FRI,
         5: DayOfWeek.SAT,
     }
-    current_day = day_map.get(datetime.utcnow().weekday())
+    current_day = day_map.get(datetime.now(timezone.utc).replace(tzinfo=None).weekday())
     if not current_day:
         return success_response([], "No timetable entries for today")
 

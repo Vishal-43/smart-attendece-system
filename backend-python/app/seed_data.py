@@ -3,7 +3,7 @@ Seed script to test database connection and insert sample data
 Run: python app/seed_data.py
 """
 
-from datetime import datetime, date, time, timedelta
+from datetime import datetime, date, time, timedelta, timezone
 from app.database.database import engine, SessionLocal, Base
 from app.database.user import User, UserRole
 from app.security.password import hash_password
@@ -401,7 +401,7 @@ def seed_qr_codes(session, tt_ids):
     try:
         logger.info("🔲 Inserting sample QR codes...")
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         expires = now + timedelta(seconds=30)
 
         qr1 = QRCode(
@@ -425,7 +425,7 @@ def seed_otp_codes(session, tt_ids):
     try:
         logger.info("🔐 Inserting sample OTP codes...")
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         expires = now + timedelta(seconds=60)
 
         otp1 = OTPCode(
@@ -456,7 +456,7 @@ def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_i
             location_id=loc_ids["room_301"],
             status=AttendanceStatus.PRESENT,
             device_info='{"device": "iPhone 12", "os": "iOS 15"}',
-            marked_at=datetime.utcnow(),
+            marked_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
 
         att2 = AttendanceRecord(
@@ -469,7 +469,7 @@ def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_i
             location_id=loc_ids["room_301"],
             status=AttendanceStatus.LATE,
             device_info='{"device": "Samsung A12", "os": "Android 11"}',
-            marked_at=datetime.utcnow(),
+            marked_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
 
         session.add_all([att1, att2])

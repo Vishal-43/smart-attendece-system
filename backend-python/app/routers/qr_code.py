@@ -11,7 +11,7 @@ import base64
 import io
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import qrcode
@@ -50,7 +50,7 @@ def _serialize_qr(qr: QRCode, include_image: bool = False) -> dict:
         "created_at": qr.created_at.isoformat() if qr.created_at else None,
         "expires_at": qr.expires_at.isoformat() if qr.expires_at else None,
         "used_count": qr.used_count,
-        "is_expired": qr.expires_at < datetime.utcnow() if qr.expires_at else True,
+        "is_expired": qr.expires_at < datetime.now(timezone.utc).replace(tzinfo=None) if qr.expires_at else True,
     }
     if include_image:
         payload["qr_image_base64"] = _generate_qr_image(qr.code)
@@ -83,7 +83,7 @@ async def generate_qr_code(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You can only generate codes for your own timetables")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.query(QRCode).filter(
         QRCode.timetable_id == timetable_id,
         QRCode.expires_at > now,
@@ -137,7 +137,7 @@ async def get_current_qr(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You are not the teacher for this timetable")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     qr = (
         db.query(QRCode)
         .filter(QRCode.timetable_id == timetable_id, QRCode.expires_at > now)
@@ -174,7 +174,7 @@ async def refresh_qr_code(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You can only generate codes for your own timetables")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.query(QRCode).filter(
         QRCode.timetable_id == timetable_id,
         QRCode.expires_at > now,

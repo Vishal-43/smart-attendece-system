@@ -9,7 +9,7 @@ Endpoints:
 
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -44,7 +44,7 @@ def _serialize_otp(otp: OTPCode) -> dict:
         "created_at": otp.created_at.isoformat() if otp.created_at else None,
         "expires_at": otp.expires_at.isoformat() if otp.expires_at else None,
         "used_count": otp.used_count,
-        "is_expired": otp.expires_at < datetime.utcnow() if otp.expires_at else True,
+        "is_expired": otp.expires_at < datetime.now(timezone.utc).replace(tzinfo=None) if otp.expires_at else True,
     }
 
 
@@ -72,12 +72,13 @@ async def generate_otp(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You can only generate OTPs for your own timetables")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.query(OTPCode).filter(
         OTPCode.timetable_id == timetable_id,
         OTPCode.expires_at > now,
     ).update({"expires_at": now})
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     otp = OTPCode(
         timetable_id=timetable_id,
         code=_make_otp(),
@@ -124,7 +125,7 @@ async def get_current_otp(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You can only generate OTPs for your own timetables")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     otp = (
         db.query(OTPCode)
         .filter(OTPCode.timetable_id == timetable_id, OTPCode.expires_at > now)
@@ -161,12 +162,13 @@ async def refresh_otp(
     if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
         raise ForbiddenError("You can only generate OTPs for your own timetables")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     db.query(OTPCode).filter(
         OTPCode.timetable_id == timetable_id,
         OTPCode.expires_at > now,
     ).update({"expires_at": now})
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     otp = OTPCode(
         timetable_id=timetable_id,
         code=_make_otp(),

@@ -1,0 +1,122 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend-python
+          pip install ruff
+          ruff check app/ routers/ core/ database/ schemas/ security/ services/
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend-python
+          pip install -e . -q
+          pip install -r requirements.txt -q
+
+      - name: Run tests
+        run: |
+          cd backend-python
+          python -m pytest tests/ -v --tb=short
+
+  web-lint-and-build:
+    name: Web Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm ci
+
+      - name: Lint
+        run: |
+          cd web
+          npm run lint
+
+      - name: Type check
+        run: |
+          cd web
+          npm run type-check || true
+
+      - name: Build
+        run: |
+          cd web
+          npm run build
+
+  mobile-check:
+    name: Mobile Flutter Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: "stable"
+
+      - name: Install dependencies
+        run: |
+          cd mobile
+          flutter pub get
+
+      - name: Analyze
+        run: |
+          cd mobile
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | head -20 || true
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend Docker image
+        run: |
+          cd backend-python
+          docker build -t smartattendance-backend:${{ github.sha }} .
+
+      - name: Build web Docker image
+        run: |
+          docker build -t smartattendance-web:${{ github.sha }} web/

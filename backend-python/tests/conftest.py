@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -250,7 +250,7 @@ def valid_qr_code(db, timetable):
     obj = QRCode(
         timetable_id=timetable.id,
         code="test_qr_token_12345",
-        expires_at=datetime.utcnow() + timedelta(minutes=10),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=10),
         used_count=0,
     )
     db.add(obj)
@@ -264,7 +264,7 @@ def expired_qr_code(db, timetable):
     obj = QRCode(
         timetable_id=timetable.id,
         code="expired_qr_token_12345",
-        expires_at=datetime.utcnow() - timedelta(minutes=5),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=5),
         used_count=0,
     )
     db.add(obj)
@@ -278,7 +278,7 @@ def valid_otp_code(db, timetable):
     obj = OTPCode(
         timetable_id=timetable.id,
         code="123456",
-        expires_at=datetime.utcnow() + timedelta(minutes=5),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=5),
         used_count=0,
     )
     db.add(obj)
@@ -292,7 +292,7 @@ def expired_otp_code(db, timetable):
     obj = OTPCode(
         timetable_id=timetable.id,
         code="654321",
-        expires_at=datetime.utcnow() - timedelta(minutes=1),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1),
         used_count=0,
     )
     db.add(obj)

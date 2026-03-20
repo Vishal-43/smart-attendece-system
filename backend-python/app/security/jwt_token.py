@@ -1,6 +1,6 @@
 import os
 from jose import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def _secret_key() -> str:
@@ -15,7 +15,7 @@ def _algorithm() -> str:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    exp_min = datetime.utcnow() + timedelta(
+    exp_min = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
         minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     )
     to_encode.update({"exp": exp_min})
@@ -28,7 +28,7 @@ def create_access_token(data: dict) -> str:
 # Add create_refresh_token function
 def create_refresh_token(data: dict) -> str:
     to_encode = data.copy()
-    exp_min = datetime.utcnow() + timedelta(
+    exp_min = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
         days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
     )
     to_encode.update({"exp": exp_min})

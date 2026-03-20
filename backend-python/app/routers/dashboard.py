@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -56,7 +56,7 @@ def get_dashboard_stats(
             "late": late,
             "attendance_rate": attendance_rate,
             "trend": trend,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
         },
         "Dashboard stats retrieved successfully",
     )
