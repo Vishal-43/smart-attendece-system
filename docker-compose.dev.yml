@@ -20,13 +20,28 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://smartattendance_user:smartattendance_pass@db:5432/smartattendance
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8000:8000"
     volumes:
       - ./backend-python:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     image: node:18-alpine
