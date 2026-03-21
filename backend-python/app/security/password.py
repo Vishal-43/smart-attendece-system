@@ -16,7 +16,7 @@ def hash_password(password: str, user: str) -> str:
 
 
 def verify_password(password: str, hashed_password: str, user: str) -> str:
-    return pwd_context.verify(password + user, hashed_password)
+    return pwd_context.verify(password, hashed_password)
 
 
 if __name__ == "__main__":
