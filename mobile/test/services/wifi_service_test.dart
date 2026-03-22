@@ -15,22 +15,31 @@ void main() {
       expect(wifiService, isA<WifiService>());
     });
 
-    test('getWifiInfo returns string', () async {
-      final info = await wifiService.getWifiInfo();
-      expect(info, isA<String>());
-      expect(info.isNotEmpty, true);
+    test('getCompleteWifiInfo returns map', () async {
+      final info = await wifiService.getCompleteWifiInfo();
+      expect(info, isA<Map<String, String?>>());
     });
 
     test('getWifiSSID returns string or null', () async {
       final ssid = await wifiService.getWifiSSID();
-      // In test environment, this will likely be null
       expect(ssid, isA<dynamic>());
     });
 
     test('getWifiBSSID returns string or null', () async {
       final bssid = await wifiService.getWifiBSSID();
-      // In test environment, this will likely be null
       expect(bssid, isA<dynamic>());
+    });
+
+    test('formatMacAddress formats correctly', () {
+      expect(
+        wifiService.formatMacAddress('AA:BB:CC:DD:EE:FF'),
+        'AA:BB:CC:DD:EE:FF',
+      );
+      expect(wifiService.formatMacAddress('AABBCCDDEEFF'), 'AA:BB:CC:DD:EE:FF');
+      expect(
+        wifiService.formatMacAddress('aa:bb:cc:dd:ee:ff'),
+        'AA:BB:CC:DD:EE:FF',
+      );
     });
   });
 }

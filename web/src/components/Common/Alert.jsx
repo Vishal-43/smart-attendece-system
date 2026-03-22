@@ -1,6 +1,6 @@
 import { X, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react'
 import clsx from 'clsx'
-import './Alert.css'
+import './components.css'
 
 export default function Alert({
   type = 'info',

@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import Layout from './components/Layout/Layout'
-import ProtectedRoute from './components/ProtectedRoute'
+import ErrorBoundary from './components/ErrorBoundary'
+import { Loading } from './components/Common'
 
 // Auth pages
 import LoginPage from './pages/Auth/LoginPage'
@@ -19,6 +20,7 @@ import TimetablesPage from './pages/Management/TimetablesPage'
 import LocationsPage from './pages/Management/LocationsPage'
 import AccessPointsPage from './pages/Management/AccessPointsPage'
 import CoursesPage from './pages/Management/CoursesPage'
+import SubjectsPage from './pages/Management/SubjectsPage'
 import BranchesPage from './pages/Management/BranchesPage'
 import BatchesPage from './pages/Management/BatchesPage'
 import EnrollmentsPage from './pages/Management/EnrollmentsPage'
@@ -40,59 +42,67 @@ import NotFoundPage from './pages/NotFoundPage'
 // Showcase (development only)
 import GlassUIShowcase from './pages/GlassUIShowcase'
 
-export default function App() {
+function ProtectedLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isLoading = useAuthStore((state) => state.isLoading)
 
+  if (isLoading) {
+    return <Loading fullScreen />
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />
+  }
+
+  return <Layout />
+}
+
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Showcase Route (development/demo) */}
-        <Route path="/showcase" element={<GlassUIShowcase />} />
+      <ErrorBoundary>
+        <Routes>
+          {/* Showcase Route (development/demo) */}
+          <Route path="/showcase" element={<GlassUIShowcase />} />
 
-        {/* Auth Routes */}
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
-        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+          {/* Auth Routes */}
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/register" element={<RegisterPage />} />
+          <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
-        {/* Protected Routes */}
-        <Route
-          element={
-            isAuthenticated ? (
-              <Layout />
-            ) : (
-              <Navigate to="/auth/login" replace />
-            )
-          }
-        >
-          <Route path="/" element={<DashboardPage />} />
-          
-          {/* Management Routes */}
-          <Route path="/management/users" element={<UsersPage />} />
-          <Route path="/management/divisions" element={<DivisionsPage />} />
-          <Route path="/management/timetables" element={<TimetablesPage />} />
-          <Route path="/management/locations" element={<LocationsPage />} />
-          <Route path="/management/access-points" element={<AccessPointsPage />} />
-          <Route path="/management/courses" element={<CoursesPage />} />
-          <Route path="/management/branches" element={<BranchesPage />} />
-          <Route path="/management/batches" element={<BatchesPage />} />
-          <Route path="/management/enrollments" element={<EnrollmentsPage />} />
-          <Route path="/management/qr-otp" element={<QrOtpManagement />} />
+          {/* Protected Routes */}
+          <Route element={<ProtectedLayout />}>
+            <Route path="/" element={<DashboardPage />} />
+            
+            {/* Management Routes */}
+            <Route path="/management/users" element={<UsersPage />} />
+            <Route path="/management/divisions" element={<DivisionsPage />} />
+            <Route path="/management/timetables" element={<TimetablesPage />} />
+            <Route path="/management/locations" element={<LocationsPage />} />
+            <Route path="/management/access-points" element={<AccessPointsPage />} />
+            <Route path="/management/courses" element={<CoursesPage />} />
+            <Route path="/management/subjects" element={<SubjectsPage />} />
+            <Route path="/management/branches" element={<BranchesPage />} />
+            <Route path="/management/batches" element={<BatchesPage />} />
+            <Route path="/management/enrollments" element={<EnrollmentsPage />} />
+            <Route path="/management/qr-otp" element={<QrOtpManagement />} />
 
-          {/* Reports Routes */}
-          <Route path="/reports/attendance" element={<AttendanceReportsPage />} />
-          <Route path="/reports/student/:id" element={<StudentReportPage />} />
-          <Route path="/reports/class/:id" element={<ClassReportPage />} />
-          <Route path="/reports/analytics" element={<AnalyticsPage />} />
+            {/* Reports Routes */}
+            <Route path="/reports/attendance" element={<AttendanceReportsPage />} />
+            <Route path="/reports/student/:id" element={<StudentReportPage />} />
+            <Route path="/reports/class/:id" element={<ClassReportPage />} />
+            <Route path="/reports/analytics" element={<AnalyticsPage />} />
 
-          {/* Settings Routes */}
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
+            {/* Settings Routes */}
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          {/* 404 */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

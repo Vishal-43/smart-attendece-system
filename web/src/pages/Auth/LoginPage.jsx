@@ -1,37 +1,36 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useLogin } from '../../api/hooks'
 import { useAuthStore } from '../../stores/authStore'
+import { login as loginService } from '../../api/services'
 import { Button, Input, Alert } from '../../components/Common'
+import { LayoutDashboard, Mail, Lock, LogIn } from 'lucide-react'
 import './Auth.css'
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ username: '', password: '' })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-  const loginMutation = useLogin()
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
     try {
-      const response = await loginMutation.mutateAsync({
-        email: formData.email,
-        password: formData.password,
-      })
-
-      const { user, access_token, refresh_token } = response.data
+      const res = await loginService(form.username, form.password)
+      const { user, access_token, refresh_token } = res
       login(user, access_token, refresh_token)
       navigate('/')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.')
+      setError(err.response?.data?.detail || 'Invalid username or password')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -39,63 +38,81 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
+          <div className="auth-logo">
+            <LayoutDashboard size={26} color="#fff" strokeWidth={2} />
+          </div>
           <h1 className="auth-title">Smart Attendance</h1>
-          <p className="auth-subtitle">Admin Dashboard</p>
+          <p className="auth-subtitle">Sign in to your admin account</p>
         </div>
 
         {error && (
-          <Alert
-            type="error"
-            message={error}
-            onClose={() => setError('')}
-            className="auth-alert"
-          />
+          <Alert type="error" message={error} onClose={() => setError('')} />
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <Input
-            label="Email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="admin@example.com"
-            required
-          />
+          <div className="form-group">
+            <label className="form-group__label">Username</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
+              <input
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                placeholder="Enter your username"
+                required
+                autoComplete="username"
+                className="input"
+                style={{ paddingLeft: '44px' }}
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            required
-          />
+          <div className="form-group">
+            <label className="form-group__label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
+              <input
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+                className="input"
+                style={{ paddingLeft: '44px' }}
+              />
+            </div>
+          </div>
 
-          {/* <div className="auth-options">
-            <Link to="/auth/forgot-password" className="auth-link">
-              Forgot password?
-            </Link>
-          </div> */}
+          <div className="auth-remember">
+            <label className="auth-remember-label">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+            <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
+          </div>
 
           <Button
             variant="primary"
             size="lg"
             type="submit"
-            disabled={loginMutation.isPending}
-            style={{ width: '100%' }}
+            disabled={loading}
+            style={{ marginTop: '8px' }}
           >
-            {loginMutation.isPending ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <>
+                <span className="spinner" />
+                Signing in...
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                Sign in
+              </>
+            )}
           </Button>
         </form>
-
-        {/* <p className="auth-footer">
-          Don't have an account?{' '}
-          <Link to="/auth/register" className="auth-link-bold">
-            Sign up
-          </Link>
-        </p> */}
       </div>
     </div>
   )

@@ -21,7 +21,7 @@ def _serialize_batch(batch: Batch) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_all_batches(db: Session = Depends(get_db)):
     batches = db.query(Batch).all()
     return success_response([_serialize_batch(b) for b in batches], "Batches retrieved successfully")
@@ -43,7 +43,7 @@ def get_batch(batch_id: int, db: Session = Depends(get_db)):
     return success_response(_serialize_batch(batch), "Batch retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_batch(batch_in: BatchCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     new_batch = Batch(
         division_id=batch_in.division_id,

@@ -1,7 +1,11 @@
+/* ============================================================
+   LAYOUT - Enterprise Professional Dashboard Shell
+   ============================================================ */
+
 .layout {
   display: flex;
-  height: 100vh;
-  background: transparent;
+  min-height: 100vh;
+  background: var(--bg-page);
 }
 
 .layout__main {
@@ -9,42 +13,62 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  margin-left: 260px;
+  min-height: 100vh;
+  margin-left: var(--sidebar-w);
+  transition: margin-left var(--transition-slow);
 }
 
 .layout__content {
   flex: 1;
+  padding-top: var(--header-h);
   overflow-y: auto;
-  padding: var(--spacing-lg);
-  background: transparent;
+  background: var(--bg-page);
 }
 
-.container {
-  animation: fadeInUp 260ms ease-out;
+/* Collapsed state */
+.layout--collapsed .layout__main {
+  margin-left: var(--sidebar-w-collapsed);
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.layout--collapsed .sidebar {
+  width: var(--sidebar-w-collapsed);
 }
 
-@media (max-width: 768px) {
-  .layout {
-    flex-direction: column;
-  }
+.layout--collapsed .sidebar .sb-name,
+.layout--collapsed .sidebar .sb-group-label,
+.layout--collapsed .sidebar .sb-item span,
+.layout--collapsed .sidebar .sb-badge,
+.layout--collapsed .sidebar .sb-user-info {
+  opacity: 0;
+  visibility: hidden;
+}
 
+.layout--collapsed .sidebar .sb-logo {
+  justify-content: center;
+  padding: 0;
+}
+
+.layout--collapsed .sidebar .sb-footer {
+  justify-content: center;
+  padding: 12px;
+}
+
+.layout--collapsed .sidebar .sb-settings-btn {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
   .layout__main {
     margin-left: 0;
-    padding-top: 52px;
   }
-
-  .layout__content {
-    padding: var(--spacing-md);
+  
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+  }
+  
+  .sidebar--open {
+    transform: translateX(0);
   }
 }

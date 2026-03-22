@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import './Table.css'
+import './components.css'
 
 export default function Table({
   columns = [],

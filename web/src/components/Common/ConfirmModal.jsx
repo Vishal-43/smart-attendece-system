@@ -18,7 +18,7 @@
 
 import React, { useCallback } from 'react';
 import { AlertTriangle, Trash2, CheckCircle, Info, X } from 'lucide-react';
-import './ConfirmModal.css';
+import './components.css';
 
 const VARIANT_META = {
   danger: {

@@ -76,13 +76,14 @@ export default function QrOtpManagement() {
 
     socket.onmessage = (event) => {
       try {
+        if (typeof event.data !== 'string') return;
         const payload = JSON.parse(event.data);
         if (payload?.event === 'attendance_marked') {
           setLiveCount((prev) => prev + 1);
           toast.success('New attendance marked');
         }
       } catch (err) {
-        console.error('Invalid websocket payload', err);
+        // Ignore non-JSON messages (like pong responses)
       }
     };
 
@@ -94,11 +95,11 @@ export default function QrOtpManagement() {
 
   const fetchTimetables = async () => {
     try {
-      const response = await timetablesAPI.listTimetables();
-      const data = response.data;
+      const response = await timetablesAPI.getMySchedule();
+      const data = response?.data?.data || response?.data || [];
       setTimetables(Array.isArray(data) ? data : []);
     } catch (error) {
-      toast.error('Failed to fetch timetables');
+      toast.error('Failed to fetch timetables: ' + (error.response?.data?.detail || error.message));
       console.error(error);
     } finally {
       setFetchingTimetables(false);
@@ -123,9 +124,9 @@ export default function QrOtpManagement() {
     
     try {
       const response = await qrAPI.getCurrent(selectedTimetable, { with_image: true });
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setQrData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
     } catch (error) {
       if (error.response?.status !== 404) {
         toast.error('Failed to fetch current QR code');
@@ -139,9 +140,9 @@ export default function QrOtpManagement() {
     
     try {
       const response = await otpAPI.getCurrent(selectedTimetable);
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setOtpData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
     } catch (error) {
       if (error.response?.status !== 404) {
         toast.error('Failed to fetch current OTP');
@@ -159,9 +160,9 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await qrAPI.generate(selectedTimetable, { ttl_minutes: 10 });
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setQrData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
       toast.success('QR Code generated successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to generate QR code');
@@ -179,9 +180,9 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await otpAPI.generate(selectedTimetable, { ttl_minutes: 5 });
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setOtpData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
       toast.success('OTP generated successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to generate OTP');
@@ -196,12 +197,32 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await qrAPI.refresh(selectedTimetable);
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setQrData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
       toast.success('QR Code refreshed');
     } catch (error) {
       toast.error('Failed to refresh QR code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const endQRSession = async () => {
+    if (!selectedTimetable) return;
+    
+    if (!confirm('Are you sure you want to end this QR session? Students will no longer be able to mark attendance.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await qrAPI.cancel(selectedTimetable);
+      setQrData(null);
+      setTimeRemaining(null);
+      toast.success('QR session ended');
+    } catch (error) {
+      toast.error('Failed to end QR session');
     } finally {
       setLoading(false);
     }
@@ -213,12 +234,32 @@ export default function QrOtpManagement() {
     setLoading(true);
     try {
       const response = await otpAPI.refresh(selectedTimetable);
-      const data = response.data;
+      const data = response?.data?.data || response?.data || response;
       setOtpData(data);
-      setTimeRemaining(calculateTimeRemaining(data.expires_at));
+      setTimeRemaining(calculateTimeRemaining(data?.expires_at));
       toast.success('OTP refreshed');
     } catch (error) {
       toast.error('Failed to refresh OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const endOTPSession = async () => {
+    if (!selectedTimetable) return;
+    
+    if (!confirm('Are you sure you want to end this OTP session? Students will no longer be able to mark attendance.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await otpAPI.cancel(selectedTimetable);
+      setOtpData(null);
+      setTimeRemaining(null);
+      toast.success('OTP session ended');
+    } catch (error) {
+      toast.error('Failed to end OTP session');
     } finally {
       setLoading(false);
     }
@@ -252,6 +293,21 @@ export default function QrOtpManagement() {
       }
     }
   };
+
+  // Inject styles once
+  useEffect(() => {
+    const styleId = 'qr-otp-management-styles';
+    if (!document.getElementById(styleId)) {
+      const styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      styleEl.textContent = styles;
+      document.head.appendChild(styleEl);
+    }
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
 
   if (fetchingTimetables) {
     return <Loading />;
@@ -325,6 +381,14 @@ export default function QrOtpManagement() {
                       >
                         Refresh QR Code
                       </Button>
+                      <Button
+                        variant="danger"
+                        onClick={endQRSession}
+                        disabled={loading}
+                        style={{ marginLeft: '0.5rem' }}
+                      >
+                        End Session
+                      </Button>
                     </div>
                   ) : (
                     <div className="no-code">
@@ -359,6 +423,14 @@ export default function QrOtpManagement() {
                       >
                         Refresh OTP
                       </Button>
+                      <Button
+                        variant="danger"
+                        onClick={endOTPSession}
+                        disabled={loading}
+                        style={{ marginLeft: '0.5rem' }}
+                      >
+                        End Session
+                      </Button>
                     </div>
                   ) : (
                     <div className="no-code">
@@ -379,147 +451,148 @@ export default function QrOtpManagement() {
         )}
       </Card>
 
-      <style jsx>{`
-        .qr-otp-management {
-          padding: 2rem;
-        }
-
-        .page-header {
-          margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-          margin: 0;
-          color: var(--color-text-primary);
-        }
-
-        .page-header p {
-          margin: 0.5rem 0 0;
-          color: var(--color-text-secondary);
-        }
-
-        .form-group {
-          margin-bottom: 2rem;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: var(--color-text-primary);
-        }
-
-        .tabs {
-          display: flex;
-          gap: 0.5rem;
-          border-bottom: 2px solid var(--color-border);
-          margin-bottom: 2rem;
-        }
-
-        .tab {
-          padding: 0.75rem 1.5rem;
-          border: none;
-          background: none;
-          cursor: pointer;
-          font-size: 1rem;
-          font-weight: 500;
-          color: var(--color-text-secondary);
-          border-bottom: 2px solid transparent;
-          margin-bottom: -2px;
-          transition: all 0.2s;
-        }
-
-        .tab:hover {
-          color: var(--color-primary);
-        }
-
-        .tab.active {
-          color: var(--color-primary);
-          border-bottom-color: var(--color-primary);
-        }
-
-        .code-display {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.5rem;
-          padding: 2rem;
-        }
-
-        .qr-image-container {
-          padding: 1rem;
-          background: white;
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--color-border);
-        }
-
-        .qr-code-image {
-          display: block;
-          width: 300px;
-          height: 300px;
-        }
-
-        .otp-display {
-          background: var(--color-primary-subtle);
-          border: 2px solid var(--color-primary);
-          border-radius: var(--radius-lg);
-          padding: 3rem;
-        }
-
-        .otp-code {
-          font-size: 4rem;
-          font-weight: bold;
-          font-family: 'Courier New', monospace;
-          letter-spacing: 0.5rem;
-          color: var(--color-primary);
-          margin: 0;
-          text-align: center;
-        }
-
-        .code-info {
-          text-align: center;
-        }
-
-        .expiry-label {
-          font-size: 0.875rem;
-          color: var(--color-text-secondary);
-          margin: 0;
-        }
-
-        .countdown {
-          font-size: 2rem;
-          font-weight: bold;
-          font-family: 'Courier New', monospace;
-          color: var(--color-text-primary);
-          margin: 0.5rem 0;
-        }
-
-        .countdown.urgent {
-          color: var(--color-error);
-          animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        .code-value {
-          font-size: 0.875rem;
-          color: var(--color-text-secondary);
-          margin: 0.5rem 0 0;
-        }
-
-        .no-code {
-          text-align: center;
-          padding: 3rem;
-        }
-
-        .no-code p {
-          margin: 0 0 1.5rem;
-          color: var(--color-text-secondary);
-        }
-      `}</style>
     </div>
   );
 }
+
+const styles = `
+  .qr-otp-management {
+    padding: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .page-header p {
+    margin: 0.5rem 0 0;
+    color: var(--color-text-secondary);
+  }
+
+  .form-group {
+    margin-bottom: 2rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 2rem;
+  }
+
+  .tab {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+
+  .tab:hover {
+    color: var(--color-primary);
+  }
+
+  .tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  .code-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+
+  .qr-image-container {
+    padding: 1rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+
+  .qr-code-image {
+    display: block;
+    width: 300px;
+    height: 300px;
+  }
+
+  .otp-display {
+    background: var(--color-primary-subtle);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+  }
+
+  .otp-code {
+    font-size: 4rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5rem;
+    color: var(--color-primary);
+    margin: 0;
+    text-align: center;
+  }
+
+  .code-info {
+    text-align: center;
+  }
+
+  .expiry-label {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .countdown {
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: var(--color-text-primary);
+    margin: 0.5rem 0;
+  }
+
+  .countdown.urgent {
+    color: var(--color-error);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .code-value {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin: 0.5rem 0 0;
+  }
+
+  .no-code {
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .no-code p {
+    margin: 0 0 1.5rem;
+    color: var(--color-text-secondary);
+  }
+`;

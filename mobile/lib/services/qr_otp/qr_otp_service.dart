@@ -6,7 +6,10 @@ class QrOtpService {
 
   /// Generate QR code for a timetable
   /// POST /api/v1/qr/generate/{timetableId}
-  Future<Response> generateQrCode(int timetableId, {int ttlMinutes = 10}) async {
+  Future<Response> generateQrCode(
+    int timetableId, {
+    int ttlMinutes = 10,
+  }) async {
     final dio = await DioClient.getInstance();
     return await dio.post(
       '/qr/generate/$timetableId',
@@ -14,14 +17,24 @@ class QrOtpService {
     );
   }
 
-  /// Get current active QR code for a timetable
+  /// Get current active QR code for a timetable (teachers/admins only)
   /// GET /api/v1/qr/current/{timetableId}
-  Future<Response> getCurrentQr(int timetableId, {bool withImage = true}) async {
+  Future<Response> getCurrentQr(
+    int timetableId, {
+    bool withImage = true,
+  }) async {
     final dio = await DioClient.getInstance();
     return await dio.get(
       '/qr/current/$timetableId',
       queryParameters: {'with_image': withImage},
     );
+  }
+
+  /// Get QR session status for students (no code exposed)
+  /// GET /api/v1/qr/status/{timetableId}
+  Future<Response> getQrStatus(int timetableId) async {
+    final dio = await DioClient.getInstance();
+    return await dio.get('/qr/status/$timetableId');
   }
 
   /// Refresh (regenerate) QR code for a timetable
@@ -43,11 +56,18 @@ class QrOtpService {
     );
   }
 
-  /// Get current active OTP for a timetable
+  /// Get current active OTP for a timetable (teachers/admins only)
   /// GET /api/v1/otp/current/{timetableId}
   Future<Response> getCurrentOtp(int timetableId) async {
     final dio = await DioClient.getInstance();
     return await dio.get('/otp/current/$timetableId');
+  }
+
+  /// Get OTP session status for students (no code exposed)
+  /// GET /api/v1/otp/status/{timetableId}
+  Future<Response> getOtpStatus(int timetableId) async {
+    final dio = await DioClient.getInstance();
+    return await dio.get('/otp/status/$timetableId');
   }
 
   /// Refresh (regenerate) OTP for a timetable
@@ -57,12 +77,26 @@ class QrOtpService {
     return await dio.post('/otp/refresh/$timetableId');
   }
 
+  /// End/Cancel QR session
+  /// DELETE /api/v1/qr/cancel/{timetableId}
+  Future<Response> endQrSession(int timetableId) async {
+    final dio = await DioClient.getInstance();
+    return await dio.delete('/qr/cancel/$timetableId');
+  }
+
+  /// End/Cancel OTP session
+  /// DELETE /api/v1/otp/cancel/{timetableId}
+  Future<Response> endOtpSession(int timetableId) async {
+    final dio = await DioClient.getInstance();
+    return await dio.delete('/otp/cancel/$timetableId');
+  }
+
   // ── Timetables (for dropdown) ─────────────────────────────────────────────
 
   /// Get list of timetables (for teacher/admin)
-  /// GET /api/v1/timetables/
+  /// GET /api/v1/timetables
   Future<Response> getTimetables() async {
     final dio = await DioClient.getInstance();
-    return await dio.get('/timetables/');
+    return await dio.get('/timetables');
   }
 }

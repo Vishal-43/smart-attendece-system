@@ -20,7 +20,7 @@ def _serialize_branch(branch: Branch) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_all_branches(db: Session = Depends(get_db)):
     branches = db.query(Branch).all()
     return success_response([_serialize_branch(b) for b in branches], "Branches retrieved successfully")
@@ -42,7 +42,7 @@ def get_branch(branch_id: int, db: Session = Depends(get_db)):
     return success_response(_serialize_branch(branch), "Branch retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_branch(branch_in: BranchCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(Branch).filter(Branch.code == branch_in.code).first():
         raise HTTPException(
@@ -113,5 +113,18 @@ def delete_branch(branch_id: int, db: Session = Depends(get_db), _=Depends(requi
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Branch not found"
         )
+    
+    if db_branch.divisions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete branch '{db_branch.name}' because it has {len(db_branch.divisions)} division(s). Remove the divisions first."
+        )
+    
+    if db_branch.subjects:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete branch '{db_branch.name}' because it has {len(db_branch.subjects)} subject(s). Remove the subjects first."
+        )
+    
     db.delete(db_branch)
     db.commit()

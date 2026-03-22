@@ -7,7 +7,7 @@
   height: 2.5rem;
   padding: 0;
   background: var(--glass-panel-bg);
-  border: 1px solid var(--glass-panel-border);
+  border: 1.5px solid var(--glass-panel-border);
   border-radius: 50%;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -69,7 +69,7 @@
   gap: var(--spacing-sm);
   padding: 0.5rem 0.75rem;
   background: var(--glass-panel-bg);
-  border: 1px solid var(--glass-panel-border);
+  border: 1.5px solid var(--glass-panel-border);
   border-radius: var(--glass-radius-md);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);

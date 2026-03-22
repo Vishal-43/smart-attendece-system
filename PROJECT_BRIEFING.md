@@ -1530,4 +1530,22 @@ Key fixes applied during final polish:
 - Fixed OTP `generate` endpoint — restored proper implementation that creates new OTP
 - Fixed OTP `refresh` endpoint — fixed undefined `otp` variable bug, now properly creates new OTP
 - Fixed `get_current_otp` endpoint — restored the separate GET endpoint
+
+## Web Frontend Polish (March 20, 2026)
+
+All management pages now have complete CRUD with lucide-react icons, consistent glassmorphism UI, and real API data:
+- **TimetablesPage**: Fixed enum values — DayOfWeek uses lowercase (`monday`, `tuesday`, etc.), LectureType uses lowercase (`theory`, `practical`, `tutorial`)
+- **EnrollmentsPage**: Fixed enum values — EnrollmentStatus uses lowercase (`active`, `dropout`, `graduated`)
+- **DashboardPage**: Replaced emoji icons with lucide-react icons (ClipboardList, CheckCircle, TrendingUp, XCircle)
+- **Dashboard.css**: Fixed icon container styling for SVG icons
+- **Build verified clean**: `npm run build` passes with no errors
 - Fixed model defaults — use `lambda: datetime.now(timezone.utc).replace(tzinfo=None)` for naive datetime compatibility with SQLite/PostgreSQL DateTime columns
+- **Login redirect fix**: Added `isLoading` state to auth store with `onRehydrateStorage` callback to properly wait for localStorage rehydration before checking auth status
+- **Loading component**: Added `fullScreen` prop for app-level loading screen during auth rehydration
+- **LocationsPage**: Fixed RoomType enum values to match backend (`classroom`, `lab`, `auditorium`, `workshop`, `seminar_hall`, `library`, `other`)
+- **TimetablesPage**: Fixed table tag mismatch — `</div>` changed to `</table>` after `<tbody>`
+- **BranchesPage**: Fixed table tag mismatch
+- **BatchesPage**: Fixed table tag mismatch
+- **EnrollmentsPage**: Fixed table tag mismatch
+- **CoursesPage**: Removed reference to non-existent `CoursesPage.css`
+- **AccessPointsPage**: Fixed import — `locationsAPI` changed to `listLocations` function

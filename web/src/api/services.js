@@ -36,12 +36,12 @@ export const updateUserPreferences = async (userId, data) => {
 }
 
 export const listUsers = async (params) => {
-  const response = await apiClient.get('/users/', { params })
+  const response = await apiClient.get('/users', { params })
   return response.data
 }
 
 export const createUser = async (data) => {
-  const response = await apiClient.post('/users/', data)
+  const response = await apiClient.post('/users', data)
   return response.data
 }
 
@@ -150,6 +150,26 @@ export const updateLocation = async (locationId, data) => {
 
 export const deleteLocation = async (locationId) => {
   const response = await apiClient.delete(`/locations/${locationId}`)
+  return response.data
+}
+
+export const listSubjects = async (params) => {
+  const response = await apiClient.get('/subjects', { params })
+  return response.data
+}
+
+export const createSubject = async (data) => {
+  const response = await apiClient.post('/subjects', data)
+  return response.data
+}
+
+export const updateSubject = async (subjectId, data) => {
+  const response = await apiClient.put(`/subjects/${subjectId}`, data)
+  return response.data
+}
+
+export const deleteSubject = async (subjectId) => {
+  const response = await apiClient.delete(`/subjects/${subjectId}`)
   return response.data
 }
 
@@ -319,7 +339,7 @@ export const resetPassword = async (token, newPassword) => {
 
 // Notification Services
 export const listNotifications = async (params) => {
-  const response = await apiClient.get('/notifications/', { params })
+  const response = await apiClient.get('/notifications', { params })
   return response.data
 }
 

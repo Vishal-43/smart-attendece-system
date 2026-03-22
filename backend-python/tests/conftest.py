@@ -21,6 +21,7 @@ from app.database.student_enrollments import (
     StudentEnrollment,
 )
 from app.database.timetables import DayOfWeek, LectureType, Timetable
+from app.database.subjects import Subject
 from app.database.user import User, UserRole
 from app.main import app
 from app.security.jwt_token import create_access_token
@@ -186,6 +187,23 @@ def batch(db, division):
 
 
 @pytest.fixture
+def subject(db, course, branch):
+    obj = Subject(
+        name="Data Structures",
+        code="CS201",
+        description="Introduction to Data Structures",
+        course_id=course.id,
+        branch_id=branch.id,
+        semester=1,
+        is_active=True,
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@pytest.fixture
 def location(db):
     obj = Location(
         name="Main Campus Room 101",
@@ -204,9 +222,9 @@ def location(db):
 
 
 @pytest.fixture
-def timetable(db, teacher_user, division, location):
+def timetable(db, teacher_user, division, location, subject):
     obj = Timetable(
-        subject="Data Structures",
+        subject_id=subject.id,
         teacher_id=teacher_user.id,
         division_id=division.id,
         location_id=location.id,

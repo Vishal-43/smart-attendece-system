@@ -1,135 +1,121 @@
+// Sidebar.jsx - Enterprise Professional Navigation
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../../stores/authStore'
+import clsx from 'clsx'
 import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  MapPin,
-  Calendar,
-  BarChart3,
-  Settings,
-  ChevronDown,
-  Menu,
-  X,
+  LayoutDashboard, BarChart3, Users, CalendarClock,
+  BookOpen, GitBranch, Layers, UsersRound, MapPin,
+  ListChecks, ClipboardCheck, BarChart2, Settings,
+  ChevronLeft, ChevronRight, Shield, GraduationCap,
+  QrCode, Key
 } from 'lucide-react'
 import './Sidebar.css'
 
-const MENU_ITEMS = [
+const NAV_ITEMS = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    href: '/',
+    group: 'Overview',
+    items: [
+      { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+    ]
   },
   {
-    id: 'management',
-    label: 'Management',
-    icon: Users,
-    submenu: [
-      { label: 'Users', href: '/management/users' },
-      { label: 'Divisions', href: '/management/divisions' },
-      { label: 'Courses', href: '/management/courses' },
-      { label: 'Branches', href: '/management/branches' },
-      { label: 'Batches', href: '/management/batches' },
-      { label: 'Timetables', href: '/management/timetables' },
-      { label: 'Locations', href: '/management/locations' },
-      { label: 'Access Points', href: '/management/access-points' },
-      { label: 'Enrollments', href: '/management/enrollments' },
-    ],
+    group: 'Management',
+    items: [
+      { label: 'Users', path: '/management/users', icon: Users, badge: null },
+      { label: 'Timetables', path: '/management/timetables', icon: CalendarClock },
+      { label: 'QR/OTP', path: '/management/qr-otp', icon: QrCode },
+      { label: 'Courses', path: '/management/courses', icon: BookOpen },
+      { label: 'Branches', path: '/management/branches', icon: GitBranch },
+      { label: 'Divisions', path: '/management/divisions', icon: Layers },
+      { label: 'Batches', path: '/management/batches', icon: UsersRound },
+      { label: 'Subjects', path: '/management/subjects', icon: GraduationCap },
+      { label: 'Locations', path: '/management/locations', icon: MapPin },
+      { label: 'Enrollments', path: '/management/enrollments', icon: ListChecks },
+    ]
   },
   {
-    id: 'reports',
-    label: 'Reports',
-    icon: BarChart3,
-    submenu: [
-      { label: 'Attendance', href: '/reports/attendance' },
-      { label: 'Analytics', href: '/reports/analytics' },
-    ],
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: Settings,
-    href: '/settings',
-  },
+    group: 'Reports',
+    items: [
+      { label: 'Attendance', path: '/reports/attendance', icon: ClipboardCheck },
+      { label: 'Analytics', path: '/reports/analytics', icon: BarChart2 },
+    ]
+  }
 ]
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true)
-  const [expandedMenu, setExpandedMenu] = useState(null)
+export default function Sidebar({ collapsed, onToggle, className }) {
+  const user = useAuthStore(s => s.user)
   const location = useLocation()
-
-  const toggleMenu = (id) => {
-    setExpandedMenu(expandedMenu === id ? null : id)
+  
+  const getInitials = (user) => {
+    if (!user) return 'AD'
+    const first = user.first_name?.[0] ?? ''
+    const last = user.last_name?.[0] ?? ''
+    return (first + last).toUpperCase() || user.username?.[0]?.toUpperCase() || 'U'
   }
 
-  const isActive = (href) => location.pathname === href
-
   return (
-    <>
-      <button className="sidebar__toggle" onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
-        <div className="sidebar__header">
-          <h2 className="sidebar__logo">SA</h2>
-          <span className="sidebar__title">Admin</span>
+    <aside className={clsx('sidebar', { 'sidebar--collapsed': collapsed }, className)}>
+      {/* Logo Section */}
+      <div className="sb-logo">
+        <div className="sb-logo-mark">
+          {/* Logo Mark as request (Small square logo) */}
+          <div style={{ width: 14, height: 14, backgroundColor: 'var(--bg-card)', borderRadius: 2 }} />
         </div>
+        <div className="sb-logo-text">
+          <span className="sb-logo-name">SmartAttend</span>
+        </div>
+      </div>
 
-        <nav className="sidebar__nav">
-          {MENU_ITEMS.map((item) => (
-            <div key={item.id} className="sidebar__menu-item">
-              {item.submenu ? (
-                <>
-                  <button
-                    className={`sidebar__link ${
-                      expandedMenu === item.id ? 'sidebar__link--active' : ''
-                    }`}
-                    onClick={() => toggleMenu(item.id)}
-                  >
-                    <item.icon size={20} />
-                    <span className="sidebar__label">{item.label}</span>
-                    <ChevronDown
-                      size={16}
-                      className={`sidebar__chevron ${
-                        expandedMenu === item.id ? 'sidebar__chevron--open' : ''
-                      }`}
-                    />
-                  </button>
-                  {expandedMenu === item.id && (
-                    <div className="sidebar__submenu">
-                      {item.submenu.map((subitem) => (
-                        <Link
-                          key={subitem.href}
-                          to={subitem.href}
-                          className={`sidebar__sublink ${
-                            isActive(subitem.href)
-                              ? 'sidebar__sublink--active'
-                              : ''
-                          }`}
-                        >
-                          {subitem.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Link
-                  to={item.href}
-                  className={`sidebar__link ${
-                    isActive(item.href) ? 'sidebar__link--active' : ''
-                  }`}
-                >
-                  <item.icon size={20} />
-                  <span className="sidebar__label">{item.label}</span>
-                </Link>
-              )}
+      {/* Navigation */}
+      <nav className="sb-nav">
+        {NAV_ITEMS.map((section) => (
+          <div key={section.group} className="sb-section">
+            <div className="sb-section-header">
+              <span className="sb-section-title">{section.group}</span>
             </div>
-          ))}
-        </nav>
-      </aside>
-    </>
+            <div className="sb-section-items">
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={({ isActive }) =>
+                    clsx('sb-item', { 'sb-item--active': isActive })
+                  }
+                  title={collapsed ? item.label : undefined}
+                >
+                  <div className="sb-item-icon">
+                    <item.icon size={15} strokeWidth={1.75} />
+                  </div>
+                  <span className="sb-item-label">{item.label}</span>
+                  {item.badge && (
+                    <span className="sb-item-badge">{item.badge}</span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* User Section Footer */}
+      <div className="sb-footer">
+        <div className="sb-user">
+          <div className="sb-user-avatar">
+            {getInitials(user)}
+          </div>
+          <div className="sb-user-info">
+            <span className="sb-user-name">{user?.username || 'Administrator'}</span>
+            <span className="sb-user-role">
+              {user?.role || 'Admin'}
+            </span>
+          </div>
+        </div>
+        <NavLink to="/settings" className="sb-profile-btn" title="Settings">
+          <Settings size={15} strokeWidth={1.75} />
+        </NavLink>
+      </div>
+    </aside>
   )
 }

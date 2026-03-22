@@ -27,7 +27,7 @@ def _serialize_enrollment(enrollment: StudentEnrollment) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_enrollments(db: Session = Depends(get_db)):
     enrollments = db.query(StudentEnrollment).all()
     return success_response([_serialize_enrollment(e) for e in enrollments], "Enrollments retrieved successfully")
@@ -87,7 +87,7 @@ def list_enrollments_by_division(division_id: int, db: Session = Depends(get_db)
     return success_response([_serialize_enrollment(e) for e in enrollments], "Enrollments retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_enrollment(
     enrollment_in: EnrollmentCreate, db: Session = Depends(get_db), _=Depends(require_admin)
 ):

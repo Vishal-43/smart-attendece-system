@@ -206,6 +206,6 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/is-admin")
 def is_admin(current_user: User = Depends(get_current_user)):
     return success_response(
-        data={"is_admin": current_user.role.value == "admin"},
+        data={"is_admin": current_user.role.value == "ADMIN"},
         message="Admin check completed",
     )

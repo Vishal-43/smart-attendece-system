@@ -11,23 +11,25 @@ from sqlalchemy import (
     String,
     Time,
 )
+from sqlalchemy.orm import relationship
 
 from app.database.database import Base
 
 
 class LectureType(enum.Enum):
-    THEORY = "theory"
-    PRACTICAL = "practical"
-    TUTORIAL = "tutorial"
+    THEORY = "THEORY"
+    PRACTICAL = "PRACTICAL"
+    TUTORIAL = "TUTORIAL"
 
 
 class DayOfWeek(enum.Enum):
-    MON = "monday"
-    TUE = "tuesday"
-    WED = "wednesday"
-    THU = "thursday"
-    FRI = "friday"
-    SAT = "saturday"
+    MON = "MON"
+    TUE = "TUE"
+    WED = "WED"
+    THU = "THU"
+    FRI = "FRI"
+    SAT = "SAT"
+    SUN = "SUN"
 
 
 class Timetable(Base):
@@ -39,7 +41,7 @@ class Timetable(Base):
     )
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
-    subject = Column(String(100), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
     lecture_type = Column(Enum(LectureType), nullable=False)
     batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
     day_of_week = Column(Enum(DayOfWeek), nullable=False)
@@ -52,3 +54,6 @@ class Timetable(Base):
     updated_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False
     )
+
+    subject = relationship("Subject", back_populates="timetables")
+    attendance_records = relationship("AttendanceRecord", back_populates="timetable")

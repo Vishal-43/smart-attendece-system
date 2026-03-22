@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+import enum
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 
 from app.database.database import Base
 
@@ -14,3 +15,4 @@ class OTPCode(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used_count = Column(Integer, default=0, nullable=False)
+    status = Column(String, default="active", nullable=False)

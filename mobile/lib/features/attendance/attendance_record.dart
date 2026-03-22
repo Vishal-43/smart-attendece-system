@@ -31,19 +31,24 @@ class AttendanceRecord {
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
+    final rawStatus = json['status'] as String? ?? 'present';
     return AttendanceRecord(
-      id:           json['id'] as int,
-      timetableId:  json['timetable_id'] as int,
-      studentId:    json['student_id'] as int,
+      id: json['id'] as int,
+      timetableId: json['timetable_id'] as int,
+      studentId: json['student_id'] as int,
       enrollmentId: json['enrollment_id'] as int?,
-      teacherId:    json['teacher_id']   as int?,
-      divisionId:   json['division_id']  as int?,
-      batchId:      json['batch_id']     as int?,
-      locationId:   json['location_id']  as int?,
-      markedAt:     json['marked_at']  != null ? DateTime.tryParse(json['marked_at'] as String) : null,
-      status:       json['status'] as String? ?? 'present',
-      deviceInfo:   json['device_info'] as String?,
-      createdAt:    json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+      teacherId: json['teacher_id'] as int?,
+      divisionId: json['division_id'] as int?,
+      batchId: json['batch_id'] as int?,
+      locationId: json['location_id'] as int?,
+      markedAt: json['marked_at'] != null
+          ? DateTime.tryParse(json['marked_at'] as String)
+          : null,
+      status: rawStatus.toLowerCase(),
+      deviceInfo: json['device_info'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
 
@@ -62,9 +67,9 @@ class AttendanceRecord {
     'created_at': createdAt?.toIso8601String(),
   };
 
-  bool get isPresent => status == 'present';
-  bool get isAbsent  => status == 'absent';
-  bool get isLate    => status == 'late';
+  bool get isPresent => status.toLowerCase() == 'present';
+  bool get isAbsent => status.toLowerCase() == 'absent';
+  bool get isLate => status.toLowerCase() == 'late';
 }
 
 /// Paginated response wrapper from the history endpoint.
@@ -90,7 +95,7 @@ class AttendanceHistoryPage {
           .map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
           .toList(),
       total: json['total'] as int? ?? 0,
-      page:  json['page']  as int? ?? 1,
+      page: json['page'] as int? ?? 1,
       limit: json['limit'] as int? ?? 20,
       pages: json['pages'] as int? ?? 0,
     );

@@ -26,7 +26,7 @@ def _serialize_location(location: Location) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_locations(db: Session = Depends(get_db)):
     locations = db.query(Location).all()
     return success_response([_serialize_location(l) for l in locations], "Locations retrieved successfully")
@@ -42,7 +42,7 @@ def get_location(location_id: int, db: Session = Depends(get_db)):
     return success_response(_serialize_location(location), "Location retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_location(location_in: LocationCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(Location).filter(Location.name == location_in.name).first():
         raise HTTPException(

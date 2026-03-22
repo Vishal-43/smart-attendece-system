@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as api from './endpoints'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../stores/authStore'
 
 // Auth Hooks
 export const useLogin = () => {
@@ -27,6 +28,7 @@ export const useLogout = () => {
     mutationFn: () => api.authAPI.logout(),
     onSuccess: () => {
       queryClient.clear()
+      useAuthStore.getState().logout()
     },
   })
 }
@@ -221,6 +223,20 @@ export const useTimetable = (id) => {
   })
 }
 
+export const useMySchedule = (params = {}) => {
+  return useQuery({
+    queryKey: ['timetables', 'my-schedule', params],
+    queryFn: () => api.timetablesAPI.getMySchedule(params),
+  })
+}
+
+export const useTodayTimetable = () => {
+  return useQuery({
+    queryKey: ['timetables', 'today'],
+    queryFn: () => api.timetablesAPI.getTodayTimetable(),
+  })
+}
+
 export const useCreateTimetable = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -267,7 +283,7 @@ export const useDeleteTimetable = () => {
 export const useAttendanceReport = (params = {}) => {
   return useQuery({
     queryKey: ['attendance', 'report', params],
-    queryFn: () => api.attendanceAPI.getRecords(params),
+    queryFn: () => api.attendanceAPI.listAll(params),
   })
 }
 
@@ -360,9 +376,13 @@ export const useCreateEnrollment = () => {
 }
 // Reports Hooks
 export const useAttendanceSummary = (params = {}) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+  )
   return useQuery({
-    queryKey: ['reports', 'attendance-summary', params],
-    queryFn: () => api.reportsAPI.getAttendanceSummary(params),
+    queryKey: ['reports', 'attendance-summary', cleanParams],
+    queryFn: () => api.reportsAPI.getAttendanceSummary(cleanParams),
+    enabled: Object.keys(cleanParams).length > 0 || params.enableQuery === true,
   })
 }
 

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import './Input.css'
+import './components.css'
 
 export default function Input({
   label,

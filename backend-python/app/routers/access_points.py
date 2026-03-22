@@ -25,7 +25,7 @@ def _serialize_access_point(ap: AccessPoint) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_access_points(
     location_id: int | None = None,
     is_active: bool | None = None,
@@ -50,7 +50,7 @@ def get_access_point(access_point_id: int, db: Session = Depends(get_db)):
     return success_response(_serialize_access_point(ap), "Access point retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_access_point(
     ap_in: AccessPointCreate, db: Session = Depends(get_db), _=Depends(require_admin)
 ):

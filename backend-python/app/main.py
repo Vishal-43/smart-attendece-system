@@ -41,6 +41,7 @@ from app.routers import (
     locations,
     notifications,
     reports,
+    subjects,
     timetable,
     users,
 )
@@ -94,7 +95,7 @@ def _resolve_limit(path: str) -> tuple[str, int]:
     return ("general", 120)
 
 # ---------------------------------------------------------------------------
-# CORS
+# CORS - must be added FIRST (outermost middleware)
 # ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -102,11 +103,15 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["x-request-id"],
 )
 
 
 @app.middleware("http")
 async def request_logging_and_rate_limit(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    
     started = time.perf_counter()
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     client_ip = request.client.host if request.client else "unknown"
@@ -195,6 +200,7 @@ app.include_router(enrollments.router)
 app.include_router(locations.router)
 app.include_router(notifications.router)
 app.include_router(reports.router)
+app.include_router(subjects.router)
 app.include_router(timetable.router)
 app.include_router(users.router)
 

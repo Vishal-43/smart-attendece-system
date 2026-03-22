@@ -1,0 +1,70 @@
+/* ErrorBoundary.css — Modern Professional Error State */
+
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  background: var(--bg-page);
+  position: relative;
+}
+
+.error-boundary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.error-boundary__card {
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  padding: 48px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.error-boundary__code {
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--red), var(--amber));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 20px;
+}
+
+.error-boundary__title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-primary);
+  margin: 0 0 12px;
+}
+
+.error-boundary__message {
+  font-size: 15px;
+  color: var(--ink-secondary);
+  margin: 0 0 28px;
+  line-height: 1.7;
+}
+
+.error-boundary__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}

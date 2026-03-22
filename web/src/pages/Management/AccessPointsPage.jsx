@@ -1,274 +1,314 @@
-import { useEffect, useState } from 'react'
-import { useState as useStateHook } from 'react'
-import { MapContainer, TileLayer, Circle, Popup } from 'react-leaflet'
-import L from 'leaflet'
-import { Card, CardBody, CardHeader, Button, Input, Loading } from '../../components/Common'
+import { useState, useEffect } from 'react'
+import { Card, CardHeader, CardBody, Button, Input, Loading, Select } from '../../components/Common'
 import { useToast } from '../../hooks/useToast'
-import { listLocations, createLocation, updateLocation, deleteLocation } from '../../api/services'
-import './Management.css'
+import { accessPointsAPI } from '../../api/endpoints'
+import { listLocations } from '../../api/services'
+import { Wifi, Plus, Edit2, Trash2, Search, X, Check, Server, Link } from 'lucide-react'
+import './AccessPointsPage.css'
 
-// Fix for default markers in leaflet
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-})
+const EMPTY_FORM = {
+  name: '',
+  mac_address: '',
+  ip_address: '',
+  location_id: '',
+  is_active: true,
+}
 
 export default function AccessPointsPage() {
   const toast = useToast()
+  const [accessPoints, setAccessPoints] = useState([])
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
-  const [isEditingNew, setIsEditingNew] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    latitude: '',
-    longitude: '',
-    radius: '',
-  })
+  const [search, setSearch] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [formData, setFormData] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
+  const [fetchingNetwork, setFetchingNetwork] = useState(false)
 
-  useEffect(() => {
-    _fetchLocations()
-  }, [])
+  useEffect(() => { fetchAll() }, [])
 
-  const _fetchLocations = async () => {
+  const fetchFromNetwork = async () => {
+    setFetchingNetwork(true)
+    try {
+      const response = await fetch('https://api.ipify.org?format=json')
+      const data = await response.json()
+      setFormData(prev => ({ ...prev, ip_address: data.ip }))
+      toast.success('IP address fetched: ' + data.ip)
+    } catch {
+      toast.error('Failed to fetch IP address')
+    } finally {
+      setFetchingNetwork(false)
+    }
+  }
+
+  const fetchAll = async () => {
     setLoading(true)
     try {
-      const data = await listLocations({ limit: 100 })
-      setLocations(Array.isArray(data) ? data : [])
-    } catch (error) {
-      toast.error('Failed to load locations')
+      const [apRes, locRes] = await Promise.all([
+        accessPointsAPI.listAccessPoints({ limit: 500 }),
+        listLocations({ limit: 500 }),
+      ])
+      setAccessPoints(apRes.data || apRes || [])
+      setLocations(Array.isArray(locRes) ? locRes : locRes?.data || [])
+    } catch {
+      toast.error('Failed to load data')
     } finally {
       setLoading(false)
     }
   }
 
   const validateForm = () => {
-    const newErrors = {}
-    if (!formData.name) newErrors.name = 'Name is required'
-    if (!formData.latitude) newErrors.latitude = 'Latitude is required'
-    if (isNaN(parseFloat(formData.latitude))) newErrors.latitude = 'Invalid latitude'
-    if (!formData.longitude) newErrors.longitude = 'Longitude is required'
-    if (isNaN(parseFloat(formData.longitude))) newErrors.longitude = 'Invalid longitude'
-    if (!formData.radius) newErrors.radius = 'Radius is required'
-    if (isNaN(parseInt(formData.radius)) || parseInt(formData.radius) <= 0) {
-      newErrors.radius = 'Radius must be a positive number'
+    const errs = {}
+    if (!formData.name.trim()) errs.name = 'Name is required'
+    if (!formData.mac_address.trim()) errs.mac_address = 'MAC address is required'
+    if (formData.mac_address && !/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(formData.mac_address)) {
+      errs.mac_address = 'Invalid MAC address format (e.g. AA:BB:CC:DD:EE:FF)'
     }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    if (formData.ip_address && !/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(formData.ip_address)) {
+      errs.ip_address = 'Invalid IP address format'
+    }
+    if (!formData.location_id) errs.location_id = 'Location is required'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
   }
 
-  const handleCreate = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) return
-
-    setLoading(true)
+    const payload = {
+      name: formData.name.trim(),
+      mac_address: formData.mac_address.trim().toUpperCase(),
+      ip_address: formData.ip_address || undefined,
+      location_id: parseInt(formData.location_id),
+      is_active: formData.is_active,
+    }
     try {
-      await createLocation({
-        name: formData.name,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
-        radius: parseInt(formData.radius),
-      })
-      
-      setFormData({ name: '', latitude: '', longitude: '', radius: '' })
-      setErrors({})
-      setIsEditingNew(false)
-      toast.success('Location created successfully')
-      await _fetchLocations()
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create location')
-    } finally {
-      setLoading(false)
+      if (editingId) {
+        await accessPointsAPI.updateAccessPoint(editingId, payload)
+        toast.success('Access point updated')
+      } else {
+        await accessPointsAPI.createAccessPoint(payload)
+        toast.success('Access point created')
+      }
+      closeModal()
+      fetchAll()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Operation failed')
     }
   }
 
-  const handleDelete = async (locationId) => {
-    if (!window.confirm('Delete this location?')) return
-
-    setLoading(true)
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this access point? This cannot be undone.')) return
     try {
-      await deleteLocation(locationId)
-      toast.success('Location deleted successfully')
-      await _fetchLocations()
-    } catch (error) {
-      toast.error('Failed to delete location')
-    } finally {
-      setLoading(false)
+      await accessPointsAPI.deleteAccessPoint(id)
+      toast.success('Access point deleted')
+      fetchAll()
+    } catch {
+      toast.error('Failed to delete')
     }
   }
 
-  if (loading && locations.length === 0) {
-    return <Loading />
+  const openCreate = () => {
+    setEditingId(null)
+    setFormData(EMPTY_FORM)
+    setErrors({})
+    setIsModalOpen(true)
   }
 
-  // Map center: default to India center, or first location if available
-  const mapCenter = locations.length > 0
-    ? [parseFloat(locations[0].latitude), parseFloat(locations[0].longitude)]
-    : [20.5937, 78.9629]
+  const openEdit = (ap) => {
+    setEditingId(ap.id)
+    setFormData({
+      name: ap.name || '',
+      mac_address: ap.mac_address || '',
+      ip_address: ap.ip_address || '',
+      location_id: ap.location_id || '',
+      is_active: ap.is_active !== false,
+    })
+    setErrors({})
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingId(null)
+    setFormData(EMPTY_FORM)
+    setErrors({})
+  }
+
+  const filtered = accessPoints.filter(ap =>
+    ap.name?.toLowerCase().includes(search.toLowerCase()) ||
+    ap.mac_address?.toLowerCase().includes(search.toLowerCase()) ||
+    ap.ip_address?.toLowerCase().includes(search.toLowerCase()) ||
+    ap.location_name?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const locationOptions = [
+    { label: 'Select a location...', value: '' },
+    ...locations.map(l => ({ label: `${l.name}${l.room_no ? ` (${l.room_no})` : ''}`, value: l.id }))
+  ]
+
+  if (loading && accessPoints.length === 0) return <Loading />
 
   return (
-    <div className="management">
-      <div className="management__header">
+    <div className="page-inner">
+      <div className="page-header">
         <div>
-          <h1>Access Points (Locations)</h1>
-          <p>Manage WiFi access points and geofenced attendance locations</p>
+          <h1 className="page-title">
+            <Wifi className="page-title-icon" />
+            Access Points
+          </h1>
+          <p className="page-subtitle">Manage WiFi access points linked to locations</p>
         </div>
+        <Button variant="primary" onClick={openCreate}>
+          <Plus size={16} /> Add Access Point
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <h3>Locations Map</h3>
+          <div className="search-box">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, MAC, IP, or location..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <span className="badge">{filtered.length} access points</span>
         </CardHeader>
         <CardBody>
-          {locations.length > 0 ? (
-            <MapContainer
-              center={mapCenter}
-              zoom={5}
-              style={{ height: '400px', width: '100%', borderRadius: '8px' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {locations.map((location) => (
-                <Circle
-                  key={location.id}
-                  center={[parseFloat(location.latitude), parseFloat(location.longitude)]}
-                  radius={parseInt(location.radius)}
-                  color="blue"
-                  fillColor="lightblue"
-                  fillOpacity={0.3}
-                >
-                  <Popup>
-                    <div>
-                      <strong>{location.name}</strong>
-                      <p>
-                        Lat: {location.latitude}, Lon: {location.longitude}
-                      </p>
-                      <p>Radius: {location.radius}m</p>
-                    </div>
-                  </Popup>
-                </Circle>
-              ))}
-            </MapContainer>
+          {loading ? (
+            <Loading />
+          ) : filtered.length === 0 ? (
+            <div className="empty-state">
+              <Server size={48} />
+              <p>No access points found</p>
+              <Button variant="primary" onClick={openCreate} size="sm">
+                <Plus size={16} /> Add your first access point
+              </Button>
+            </div>
           ) : (
-            <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p>No locations available. Create one below.</p>
+            <div className="ap-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>MAC Address</th>
+                    <th>IP Address</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(ap => (
+                    <tr key={ap.id}>
+                      <td className="ap-name">
+                        <Server size={15} className="ap-icon" />
+                        {ap.name}
+                      </td>
+                      <td className="mono-text">{ap.mac_address}</td>
+                      <td className="mono-text">{ap.ip_address || '—'}</td>
+                      <td>
+                        {ap.location_name ? (
+                          <span className="location-link">
+                            <Link size={12} />
+                            {ap.location_name}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        <span className={`status-pill ${ap.is_active ? 'active' : 'inactive'}`}>
+                          <span className="status-dot" />
+                          {ap.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-btns">
+                          <button className="icon-btn icon-btn--edit" onClick={() => openEdit(ap)} title="Edit">
+                            <Edit2 size={14} />
+                          </button>
+                          <button className="icon-btn icon-btn--delete" onClick={() => handleDelete(ap.id)} title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <h3>Location List</h3>
-        </CardHeader>
-        <CardBody>
-          <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ textAlign: 'left', padding: '10px' }}>Name</th>
-                  <th style={{ textAlign: 'left', padding: '10px' }}>Latitude</th>
-                  <th style={{ textAlign: 'left', padding: '10px' }}>Longitude</th>
-                  <th style={{ textAlign: 'left', padding: '10px' }}>Radius (m)</th>
-                  <th style={{ textAlign: 'center', padding: '10px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {locations.map((location) => (
-                  <tr key={location.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '10px' }}>{location.name}</td>
-                    <td style={{ padding: '10px' }}>{location.latitude}</td>
-                    <td style={{ padding: '10px' }}>{location.longitude}</td>
-                    <td style={{ padding: '10px' }}>{location.radius}</td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDelete(location.id)}
-                        style={{ color: 'red' }}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {isEditingNew ? (
-            <form onSubmit={handleCreate} style={{ marginTop: '20px' }}>
-              <h4>Add New Location</h4>
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal modal--md" onClick={e => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title">{editingId ? 'Edit Access Point' : 'Add New Access Point'}</h2>
+              <button className="modal__close" onClick={closeModal}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal__body ap-form">
               <Input
-                label="Location Name"
-                type="text"
+                label="Access Point Name *"
+                name="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
                 error={errors.name}
-                disabled={loading}
+                placeholder="e.g. Router Room 301, AP Floor 3"
               />
               <Input
-                label="Latitude"
-                type="number"
-                step="0.0001"
-                value={formData.latitude}
-                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                error={errors.latitude}
-                disabled={loading}
+                label="MAC Address *"
+                name="mac_address"
+                value={formData.mac_address}
+                onChange={e => setFormData({ ...formData, mac_address: e.target.value })}
+                error={errors.mac_address}
+                placeholder="e.g. AA:BB:CC:DD:EE:FF"
               />
               <Input
-                label="Longitude"
-                type="number"
-                step="0.0001"
-                value={formData.longitude}
-                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                error={errors.longitude}
-                disabled={loading}
+                label="IP Address"
+                name="ip_address"
+                value={formData.ip_address}
+                onChange={e => setFormData({ ...formData, ip_address: e.target.value })}
+                error={errors.ip_address}
+                placeholder="e.g. 192.168.1.10"
               />
-              <Input
-                label="Geofence Radius (meters)"
-                type="number"
-                value={formData.radius}
-                onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
-                error={errors.radius}
-                disabled={loading}
+              <button type="button" className="fetch-network-btn" onClick={fetchFromNetwork} disabled={fetchingNetwork}>
+                <Wifi size={15} />
+                {fetchingNetwork ? 'Fetching...' : 'Fetch from Network'}
+              </button>
+              <Select
+                label="Linked Location *"
+                name="location_id"
+                value={formData.location_id}
+                onChange={e => setFormData({ ...formData, location_id: e.target.value })}
+                options={locationOptions}
+                error={errors.location_id}
               />
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => {
-                    setIsEditingNew(false)
-                    setFormData({ name: '', latitude: '', longitude: '', radius: '' })
-                    setErrors({})
-                  }}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? 'Creating...' : 'Create Location'}
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                />
+                <span className="toggle-text">Active</span>
+              </label>
+
+              <div className="modal__footer">
+                <Button variant="secondary" onClick={closeModal} type="button">Cancel</Button>
+                <Button variant="primary" type="submit">
+                  <Check size={16} />
+                  {editingId ? 'Update' : 'Create'}
                 </Button>
               </div>
             </form>
-          ) : (
-            <Button
-              variant="primary"
-              onClick={() => setIsEditingNew(true)}
-              style={{ marginTop: '10px' }}
-            >
-              + Add Location
-            </Button>
-          )}
-        </CardBody>
-      </Card>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

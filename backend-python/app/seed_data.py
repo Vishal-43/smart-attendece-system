@@ -1,16 +1,17 @@
 """
 Seed script to test database connection and insert sample data
-Run: python app/seed_data.py
+Run: python -m app.seed_data
 """
 
 from datetime import datetime, date, time, timedelta, timezone
-from app.database.database import engine, SessionLocal, Base
+from app.database.database import SessionLocal
 from app.database.user import User, UserRole
 from app.security.password import hash_password
 from app.database.courses import Course
 from app.database.branches import Branch
 from app.database.divisions import Division
 from app.database.batches import Batch
+from app.database.subjects import Subject
 from app.database.student_enrollments import (
     StudentEnrollment,
     EnrollmentStatus,
@@ -31,9 +32,8 @@ logger = logging.getLogger(__name__)
 def seed_users(session):
     """Insert sample users"""
     try:
-        logger.info("👤 Inserting sample users...")
+        logger.info("Insertting sample users...")
 
-        # Admin user
         admin = User(
             email="admin@smartattendance.com",
             username="admin",
@@ -45,7 +45,6 @@ def seed_users(session):
             is_active=True,
         )
 
-        # Teacher users
         teacher1 = User(
             email="teacher1@smartattendance.com",
             username="teacher1",
@@ -68,7 +67,6 @@ def seed_users(session):
             is_active=True,
         )
 
-        # Student users
         student1 = User(
             email="student1@smartattendance.com",
             username="student1",
@@ -104,7 +102,7 @@ def seed_users(session):
 
         session.add_all([admin, teacher1, teacher2, student1, student2, student3])
         session.commit()
-        logger.info(f"✅ Inserted 6 users (1 admin, 2 teachers, 3 students)")
+        logger.info(f"Inserted 6 users (1 admin, 2 teachers, 3 students)")
 
         return {
             "admin": admin.id,
@@ -115,15 +113,15 @@ def seed_users(session):
             "student3": student3.id,
         }
     except Exception as e:
-        logger.error(f"❌ Error inserting users: {str(e)}")
+        logger.error(f"Error inserting users: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_courses(session):
     """Insert sample courses"""
     try:
-        logger.info("📚 Inserting sample courses...")
+        logger.info("Inserting sample courses...")
 
         course1 = Course(
             name="Bachelor of Engineering",
@@ -143,19 +141,19 @@ def seed_courses(session):
 
         session.add_all([course1, course2])
         session.commit()
-        logger.info(f"✅ Inserted 2 courses")
+        logger.info(f"Inserted 2 courses")
 
         return {"be": course1.id, "me": course2.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting courses: {str(e)}")
+        logger.error(f"Error inserting courses: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_branches(session, course_ids):
     """Insert sample branches"""
     try:
-        logger.info("🏢 Inserting sample branches...")
+        logger.info("Inserting sample branches...")
 
         branch1 = Branch(
             course_id=course_ids["be"],
@@ -180,21 +178,66 @@ def seed_branches(session, course_ids):
 
         session.add_all([branch1, branch2, branch3])
         session.commit()
-        logger.info(f"✅ Inserted 3 branches")
+        logger.info(f"Inserted 3 branches")
 
         return {"comp": branch1.id, "it": branch2.id, "mech": branch3.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting branches: {str(e)}")
+        logger.error(f"Error inserting branches: {str(e)}")
         session.rollback()
-        return None
+        raise
+
+
+def seed_subjects(session, course_ids, branch_ids):
+    """Insert sample subjects"""
+    try:
+        logger.info("Inserting sample subjects...")
+
+        subjects = [
+            Subject(
+                name="Database Management System",
+                code="CS301",
+                description="Introduction to DBMS",
+                course_id=course_ids["be"],
+                branch_id=branch_ids["it"],
+                semester=4,
+                is_active=True,
+            ),
+            Subject(
+                name="Data Structures",
+                code="CS201",
+                description="Fundamentals of Data Structures",
+                course_id=course_ids["be"],
+                branch_id=branch_ids["it"],
+                semester=4,
+                is_active=True,
+            ),
+            Subject(
+                name="Operating Systems",
+                code="CS302",
+                description="OS Concepts",
+                course_id=course_ids["be"],
+                branch_id=branch_ids["it"],
+                semester=4,
+                is_active=True,
+            ),
+        ]
+
+        session.add_all(subjects)
+        session.commit()
+        logger.info(f"Inserted {len(subjects)} subjects")
+
+        return {"dbms": subjects[0].id, "ds": subjects[1].id, "os": subjects[2].id}
+    except Exception as e:
+        logger.error(f"Error inserting subjects: {str(e)}")
+        session.rollback()
+        raise
 
 
 def seed_divisions(session, branch_ids):
     """Insert sample divisions"""
     try:
-        logger.info("📝 Inserting sample divisions...")
+        logger.info("Inserting sample divisions...")
 
-        # Create divisions for IT branch, Year 2, Semester 4
         div1 = Division(
             branch_id=branch_ids["it"],
             name="A",
@@ -215,19 +258,19 @@ def seed_divisions(session, branch_ids):
 
         session.add_all([div1, div2])
         session.commit()
-        logger.info(f"✅ Inserted 2 divisions")
+        logger.info(f"Inserted 2 divisions")
 
         return {"div_a": div1.id, "div_b": div2.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting divisions: {str(e)}")
+        logger.error(f"Error inserting divisions: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_batches(session, div_ids):
     """Insert sample batches"""
     try:
-        logger.info("🔢 Inserting sample batches...")
+        logger.info("Inserting sample batches...")
 
         batches = []
         for div_key in ["div_a", "div_b"]:
@@ -243,19 +286,19 @@ def seed_batches(session, div_ids):
 
         session.add_all(batches)
         session.commit()
-        logger.info(f"✅ Inserted {len(batches)} batches")
+        logger.info(f"Inserted {len(batches)} batches")
 
         return batches
     except Exception as e:
-        logger.error(f"❌ Error inserting batches: {str(e)}")
+        logger.error(f"Error inserting batches: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_student_enrollments(session, student_ids, course_ids, branch_ids, div_ids):
     """Insert sample student enrollments"""
     try:
-        logger.info("✏️ Inserting sample student enrollments...")
+        logger.info("Inserting sample student enrollments...")
 
         enrollment1 = StudentEnrollment(
             student_id=student_ids["student1"],
@@ -301,19 +344,19 @@ def seed_student_enrollments(session, student_ids, course_ids, branch_ids, div_i
 
         session.add_all([enrollment1, enrollment2, enrollment3])
         session.commit()
-        logger.info(f"✅ Inserted 3 student enrollments")
+        logger.info(f"Inserted 3 student enrollments")
 
         return {"enr1": enrollment1.id, "enr2": enrollment2.id, "enr3": enrollment3.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting enrollments: {str(e)}")
+        logger.error(f"Error inserting enrollments: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_locations(session):
     """Insert sample locations"""
     try:
-        logger.info("📍 Inserting sample locations...")
+        logger.info("Inserting sample locations...")
 
         loc1 = Location(
             name="Room 301",
@@ -339,26 +382,25 @@ def seed_locations(session):
 
         session.add_all([loc1, loc2])
         session.commit()
-        logger.info(f"✅ Inserted 2 locations")
+        logger.info(f"Inserted 2 locations")
 
         return {"room_301": loc1.id, "lab_a": loc2.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting locations: {str(e)}")
+        logger.error(f"Error inserting locations: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
-def seed_timetables(session, div_ids, teacher_ids, loc_ids):
+def seed_timetables(session, div_ids, teacher_ids, loc_ids, subject_ids):
     """Insert sample timetables"""
     try:
-        logger.info("⏰ Inserting sample timetables...")
+        logger.info("Inserting sample timetables...")
 
-        # Theory lecture
         tt1 = Timetable(
             division_id=div_ids["div_a"],
             teacher_id=teacher_ids["teacher1"],
             location_id=loc_ids["room_301"],
-            subject="Database Management System",
+            subject_id=subject_ids["dbms"],
             lecture_type=LectureType.THEORY,
             batch_id=None,
             day_of_week=DayOfWeek.MON,
@@ -369,14 +411,13 @@ def seed_timetables(session, div_ids, teacher_ids, loc_ids):
             is_active=True,
         )
 
-        # Practical session
         tt2 = Timetable(
             division_id=div_ids["div_a"],
             teacher_id=teacher_ids["teacher2"],
             location_id=loc_ids["lab_a"],
-            subject="DBMS Lab",
+            subject_id=subject_ids["ds"],
             lecture_type=LectureType.PRACTICAL,
-            batch_id=None,  # Will be set per batch when retrieving
+            batch_id=None,
             day_of_week=DayOfWeek.TUE,
             start_time=time(10, 30),
             end_time=time(12, 0),
@@ -387,19 +428,19 @@ def seed_timetables(session, div_ids, teacher_ids, loc_ids):
 
         session.add_all([tt1, tt2])
         session.commit()
-        logger.info(f"✅ Inserted 2 timetables")
+        logger.info(f"Inserted 2 timetables")
 
         return {"tt1": tt1.id, "tt2": tt2.id}
     except Exception as e:
-        logger.error(f"❌ Error inserting timetables: {str(e)}")
+        logger.error(f"Error inserting timetables: {str(e)}")
         session.rollback()
-        return None
+        raise
 
 
 def seed_qr_codes(session, tt_ids):
     """Insert sample QR codes"""
     try:
-        logger.info("🔲 Inserting sample QR codes...")
+        logger.info("Inserting sample QR codes...")
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         expires = now + timedelta(seconds=30)
@@ -413,17 +454,17 @@ def seed_qr_codes(session, tt_ids):
 
         session.add(qr1)
         session.commit()
-        logger.info(f"✅ Inserted 1 QR code")
+        logger.info(f"Inserted 1 QR code")
 
     except Exception as e:
-        logger.error(f"❌ Error inserting QR codes: {str(e)}")
+        logger.error(f"Error inserting QR codes: {str(e)}")
         session.rollback()
 
 
 def seed_otp_codes(session, tt_ids):
     """Insert sample OTP codes"""
     try:
-        logger.info("🔐 Inserting sample OTP codes...")
+        logger.info("Inserting sample OTP codes...")
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         expires = now + timedelta(seconds=60)
@@ -434,23 +475,23 @@ def seed_otp_codes(session, tt_ids):
 
         session.add(otp1)
         session.commit()
-        logger.info(f"✅ Inserted 1 OTP code")
+        logger.info(f"Inserted 1 OTP code")
 
     except Exception as e:
-        logger.error(f"❌ Error inserting OTP codes: {str(e)}")
+        logger.error(f"Error inserting OTP codes: {str(e)}")
         session.rollback()
 
 
-def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_ids):
+def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_ids, teacher_ids):
     """Insert sample attendance records"""
     try:
-        logger.info("✔️ Inserting sample attendance records...")
+        logger.info("Inserting sample attendance records...")
 
         att1 = AttendanceRecord(
             timetable_id=tt_ids["tt1"],
             student_id=student_ids["student1"],
             enrollment_id=enrollment_ids["enr1"],
-            teacher_id=1,  # teacher1 ID
+            teacher_id=teacher_ids["teacher1"],
             division_id=div_ids["div_a"],
             batch_id=None,
             location_id=loc_ids["room_301"],
@@ -463,7 +504,7 @@ def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_i
             timetable_id=tt_ids["tt1"],
             student_id=student_ids["student2"],
             enrollment_id=enrollment_ids["enr2"],
-            teacher_id=1,
+            teacher_id=teacher_ids["teacher1"],
             division_id=div_ids["div_a"],
             batch_id=None,
             location_id=loc_ids["room_301"],
@@ -474,82 +515,60 @@ def seed_attendance(session, tt_ids, student_ids, enrollment_ids, div_ids, loc_i
 
         session.add_all([att1, att2])
         session.commit()
-        logger.info(f"✅ Inserted 2 attendance records")
+        logger.info(f"Inserted 2 attendance records")
 
     except Exception as e:
-        logger.error(f"❌ Error inserting attendance: {str(e)}")
+        logger.error(f"Error inserting attendance: {str(e)}")
         session.rollback()
 
 
 def main():
     """Main seed function"""
     logger.info("\n" + "=" * 60)
-    logger.info("🌱 Starting Database Seeding...")
+    logger.info("Starting Database Seeding...")
     logger.info("=" * 60 + "\n")
 
     session = SessionLocal()
 
     try:
-        # Step 2: Insert data in order
         user_ids = seed_users(session)
-        if not user_ids:
-            return
-
         course_ids = seed_courses(session)
-        if not course_ids:
-            return
-
         branch_ids = seed_branches(session, course_ids)
-        if not branch_ids:
-            return
-
+        subject_ids = seed_subjects(session, course_ids, branch_ids)
         div_ids = seed_divisions(session, branch_ids)
-        if not div_ids:
-            return
-
         seed_batches(session, div_ids)
-
         enrollment_ids = seed_student_enrollments(
             session, user_ids, course_ids, branch_ids, div_ids
         )
-        if not enrollment_ids:
-            return
-
         loc_ids = seed_locations(session)
-        if not loc_ids:
-            return
-
-        tt_ids = seed_timetables(session, div_ids, user_ids, loc_ids)
-        if not tt_ids:
-            return
-
+        tt_ids = seed_timetables(session, div_ids, user_ids, loc_ids, subject_ids)
         seed_qr_codes(session, tt_ids)
         seed_otp_codes(session, tt_ids)
-        seed_attendance(session, tt_ids, user_ids, enrollment_ids, div_ids, loc_ids)
+        seed_attendance(session, tt_ids, user_ids, enrollment_ids, div_ids, loc_ids, user_ids)
 
-        # Verify data
         logger.info("\n" + "=" * 60)
-        logger.info("✅ Database Seeding Completed Successfully!")
+        logger.info("Database Seeding Completed Successfully!")
         logger.info("=" * 60 + "\n")
 
-        # Show sample data
-        logger.info("📊 Sample Data Verification:")
         users_count = session.query(User).count()
         courses_count = session.query(Course).count()
         branches_count = session.query(Branch).count()
+        subjects_count = session.query(Subject).count()
         divisions_count = session.query(Division).count()
         enrollments_count = session.query(StudentEnrollment).count()
         attendance_count = session.query(AttendanceRecord).count()
 
-        logger.info(f"  - Users: {users_count}")
-        logger.info(f"  - Courses: {courses_count}")
-        logger.info(f"  - Branches: {branches_count}")
-        logger.info(f"  - Divisions: {divisions_count}")
-        logger.info(f"  - Enrollments: {enrollments_count}")
-        logger.info(f"  - Attendance Records: {attendance_count}")
+        logger.info(f"Users: {users_count}")
+        logger.info(f"Courses: {courses_count}")
+        logger.info(f"Branches: {branches_count}")
+        logger.info(f"Subjects: {subjects_count}")
+        logger.info(f"Divisions: {divisions_count}")
+        logger.info(f"Enrollments: {enrollments_count}")
+        logger.info(f"Attendance Records: {attendance_count}")
 
     except Exception as e:
-        logger.error(f"\n❌ Unexpected error: {str(e)}")
+        logger.error(f"\nUnexpected error: {str(e)}")
+        raise
     finally:
         session.close()
 

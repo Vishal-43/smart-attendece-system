@@ -1,16 +1,21 @@
 import clsx from 'clsx'
-import './Card.css'
+import './components.css'
 
-export default function Card({ children, className, ...props }) {
+export default function Card({ children, className, hoverable = false, ...props }) {
   return (
-    <div className={clsx('card', className)} {...props}>
+    <div className={clsx('card', hoverable && 'card--hoverable', className)} {...props}>
       {children}
     </div>
   )
 }
 
-export function CardHeader({ children, className }) {
-  return <div className={clsx('card__header', className)}>{children}</div>
+export function CardHeader({ children, className, actions }) {
+  return (
+    <div className={clsx('card__header', className)}>
+      <div>{children}</div>
+      {actions && <div style={{ display: 'flex', gap: 8 }}>{actions}</div>}
+    </div>
+  )
 }
 
 export function CardBody({ children, className }) {

@@ -1,0 +1,11 @@
+## issues
+# seeing filds to enter QR and OTP for marking attendace in admin
+# wrong things in admin dashboard ex, mark attendance, view records.
+# manage sessions doesnt work.
+# execption handling soent work at all levels.\#failed to create, delete users
+# nothing works in profile section
+# on student page user not logged in error for qr codes and otp
+# login with userna,e doesnt work for all
+# same as admin, getting no session selected error for creating qr and otp, getting option to enter code.
+# login is not persistant
+#  user the logo.png in root folder as logo for application and web app.

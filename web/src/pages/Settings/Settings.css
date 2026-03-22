@@ -1,40 +1,74 @@
-.settings {
-  max-width: 800px;
-  margin: 0 auto;
+/* Settings.css — Modern Professional Settings */
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
 }
 
-.settings__header {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.settings__header h1 {
-  margin-bottom: var(--spacing-xs);
-}
-
-.settings__header p {
+.page-subtitle {
+  font-size: 14px;
+  color: var(--ink-secondary);
   margin: 0;
-  color: var(--glass-text-secondary);
+}
+
+.page-header {
+  margin-bottom: 28px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings__form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 20px;
 }
 
-.settings__form > * {
-  max-width: 100%;
-}
+.settings__form > * { max-width: 100%; }
 
 .settings__actions {
   display: flex;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--glass-panel-border);
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1.5px solid var(--border);
   justify-content: flex-end;
 }
 
-.card {
-  margin-bottom: var(--spacing-lg);
+.settings__section {
+  margin-bottom: 32px;
+}
+
+.settings__section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1.5px solid var(--border);
+}
+.settings__row:last-child { border-bottom: none; }
+
+.settings__row-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-primary);
+}
+
+.settings__row-desc {
+  font-size: 13px;
+  color: var(--ink-hint);
+  margin-top: 3px;
 }

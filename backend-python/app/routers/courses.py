@@ -21,7 +21,7 @@ def _serialize_course(course: Course) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_courses(db: Session = Depends(get_db)):
     courses = db.query(Course).all()
     return success_response([_serialize_course(c) for c in courses], "Courses retrieved successfully")
@@ -37,7 +37,7 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
     return success_response(_serialize_course(course), "Course retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_course(course_in: CourseCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(Course).filter(Course.code == course_in.code).first():
         raise HTTPException(
@@ -110,5 +110,18 @@ def delete_course(course_id: int, db: Session = Depends(get_db), _=Depends(requi
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Course not found"
         )
+    
+    if db_course.branches:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete course '{db_course.name}' because it has {len(db_course.branches)} branch(es). Remove the branches first."
+        )
+    
+    if db_course.subjects:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete course '{db_course.name}' because it has {len(db_course.subjects)} subject(s). Remove the subjects first."
+        )
+    
     db.delete(db_course)
     db.commit()

@@ -1,44 +1,46 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useRegister } from '../../api/hooks'
+import { register as registerService } from '../../api/services'
 import { Button, Input, Alert } from '../../components/Common'
+import { LayoutDashboard } from 'lucide-react'
 import './Auth.css'
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
   })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const registerMutation = useRegister()
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    if (formData.password !== formData.confirmPassword) {
+    if (form.password !== form.confirmPassword) {
       setError('Passwords do not match')
       return
     }
 
+    setLoading(true)
     try {
-      await registerMutation.mutateAsync({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
+      await registerService({
+        username: form.username,
+        email: form.email,
+        password: form.password,
       })
-
       navigate('/auth/login')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed')
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -46,25 +48,22 @@ export default function RegisterPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
+          <div className="auth-logo">
+            <LayoutDashboard size={20} color="#fff" strokeWidth={2} />
+          </div>
           <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Smart Attendance Admin</p>
+          <p className="auth-subtitle">Join Smart Attendance</p>
         </div>
 
         {error && (
-          <Alert
-            type="error"
-            message={error}
-            onClose={() => setError('')}
-            className="auth-alert"
-          />
+          <Alert type="error" message={error} onClose={() => setError('')} />
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <Input
             label="Username"
-            type="text"
             name="username"
-            value={formData.username}
+            value={form.username}
             onChange={handleChange}
             placeholder="admin"
             required
@@ -72,9 +71,9 @@ export default function RegisterPage() {
 
           <Input
             label="Email"
-            type="email"
             name="email"
-            value={formData.email}
+            type="email"
+            value={form.email}
             onChange={handleChange}
             placeholder="admin@example.com"
             required
@@ -82,9 +81,9 @@ export default function RegisterPage() {
 
           <Input
             label="Password"
-            type="password"
             name="password"
-            value={formData.password}
+            type="password"
+            value={form.password}
             onChange={handleChange}
             placeholder="••••••••"
             required
@@ -92,30 +91,22 @@ export default function RegisterPage() {
 
           <Input
             label="Confirm Password"
-            type="password"
             name="confirmPassword"
-            value={formData.confirmPassword}
+            type="password"
+            value={form.confirmPassword}
             onChange={handleChange}
             placeholder="••••••••"
             required
           />
 
-          <Button
-            variant="primary"
-            size="lg"
-            type="submit"
-            disabled={registerMutation.isPending}
-            style={{ width: '100%' }}
-          >
-            {registerMutation.isPending ? 'Registering...' : 'Register'}
+          <Button variant="primary" size="lg" type="submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create account'}
           </Button>
         </form>
 
         <p className="auth-footer">
           Already have an account?{' '}
-          <Link to="/auth/login" className="auth-link-bold">
-            Sign in
-          </Link>
+          <Link to="/auth/login" className="auth-link">Sign in</Link>
         </p>
       </div>
     </div>

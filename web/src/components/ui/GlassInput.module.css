@@ -24,7 +24,7 @@
   line-height: 1.5;
   color: var(--glass-text-primary);
   background: var(--glass-input-bg);
-  border: 1px solid var(--glass-input-border);
+  border: 1.5px solid var(--glass-input-border);
   border-radius: var(--glass-radius-md);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/auth_service.dart';
 
 class AttendanceRecordsScreen extends StatefulWidget {
   const AttendanceRecordsScreen({super.key});
@@ -26,8 +26,8 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
       _loading = true;
       _error = null;
     });
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('user_id');
+    final authService = AuthService();
+    final userId = await authService.getUserId();
     if (userId == null) {
       setState(() {
         _error = 'User not logged in.';

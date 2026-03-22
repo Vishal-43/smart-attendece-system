@@ -15,9 +15,9 @@ export const authAPI = {
 
 // Users Endpoints
 export const usersAPI = {
-  listUsers: (params) => apiClient.get('/users/', { params }),
+  listUsers: (params) => apiClient.get('/users', { params }),
   getUser: (id) => apiClient.get(`/users/${id}`),
-  createUser: (data) => apiClient.post('/users/', data),
+  createUser: (data) => apiClient.post('/users', data),
   updateUser: (id, data) => apiClient.put(`/users/${id}`, data),
   updatePassword: (id, data) => apiClient.put(`/users/${id}/password`, data),
   getPreferences: (id) => apiClient.get(`/users/${id}/preferences`),
@@ -56,7 +56,7 @@ export const timetablesAPI = {
   createTimetable: (data) => apiClient.post('/timetables', data),
   updateTimetable: (id, data) => apiClient.put(`/timetables/${id}`, data),
   deleteTimetable: (id) => apiClient.delete(`/timetables/${id}`),
-  getMySchedule: () => apiClient.get('/timetables/my-schedule'),
+  getMySchedule: (params) => apiClient.get('/timetables/my-schedule', { params }),
   getTodayTimetable: () => apiClient.get('/timetables/today'),
 }
 
@@ -102,7 +102,7 @@ export const attendanceAPI = {
   getHistory: (userId, params) => apiClient.get(`/attendance/history/${userId}`, { params }),
   getSession: (timetableId, params) => apiClient.get(`/attendance/session/${timetableId}`, { params }),
   updateStatus: (attendanceId, data) => apiClient.put(`/attendance/${attendanceId}`, data),
-  listAll: (params) => apiClient.get('/attendance/', { params }),
+  listAll: (params) => apiClient.get('/attendance', { params }),
 }
 
 // QR Code Endpoints
@@ -110,6 +110,7 @@ export const qrAPI = {
   generate: (timetableId, params) => apiClient.post(`/qr/generate/${timetableId}`, null, { params }),
   getCurrent: (timetableId, params) => apiClient.get(`/qr/current/${timetableId}`, { params }),
   refresh: (timetableId) => apiClient.post(`/qr/refresh/${timetableId}`),
+  cancel: (timetableId) => apiClient.delete(`/qr/cancel/${timetableId}`),
 }
 
 // OTP Endpoints
@@ -117,6 +118,7 @@ export const otpAPI = {
   generate: (timetableId, params) => apiClient.post(`/otp/generate/${timetableId}`, null, { params }),
   getCurrent: (timetableId) => apiClient.get(`/otp/current/${timetableId}`),
   refresh: (timetableId) => apiClient.post(`/otp/refresh/${timetableId}`),
+  cancel: (timetableId) => apiClient.delete(`/otp/cancel/${timetableId}`),
 }
 
 // Access Points Endpoints
@@ -138,9 +140,17 @@ export const reportsAPI = {
 
 // Notifications Endpoints
 export const notificationsAPI = {
-  list: (params) => apiClient.get('/notifications/', { params }),
+  list: (params) => apiClient.get('/notifications', { params }),
   markRead: (id) => apiClient.put(`/notifications/${id}/read`),
   unreadCount: () => apiClient.get('/notifications/unread-count'),
+}
+
+export const subjectsAPI = {
+  listSubjects: (params) => apiClient.get('/subjects', { params }),
+  getSubject: (id) => apiClient.get(`/subjects/${id}`),
+  createSubject: (data) => apiClient.post('/subjects', data),
+  updateSubject: (id, data) => apiClient.put(`/subjects/${id}`, data),
+  deleteSubject: (id) => apiClient.delete(`/subjects/${id}`),
 }
 
 export const realtimeAPI = {

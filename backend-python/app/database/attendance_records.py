@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import enum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.database.database import Base
 
@@ -32,3 +33,7 @@ class AttendanceRecord(Base):
     updated_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False
     )
+
+    timetable = relationship("Timetable", back_populates="attendance_records")
+    student = relationship("User", foreign_keys=[student_id])
+    teacher = relationship("User", foreign_keys=[teacher_id])

@@ -1,6 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.dependencies import get_current_user, get_db, require_admin
 from app.core.response import success_response
 from app.schemas.auth import PasswordChangeRequest
@@ -8,6 +9,9 @@ from app.schemas.user_preferences import UserPreferencesOut, UserPreferencesUpda
 from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.database.user_preferences import UserPreferences
 from app.database.user import User
+from app.database.password_reset_tokens import PasswordResetToken
+from app.database.notifications import Notification
+from app.database.student_enrollments import StudentEnrollment
 from app.security.password import hash_password, verify_password
 
 logger = logging.getLogger(__name__)
@@ -42,7 +46,7 @@ def _serialize_prefs(prefs: UserPreferences) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
     users = db.query(User).all()
     return success_response([_serialize_user(u) for u in users], "Users retrieved successfully")
@@ -57,7 +61,7 @@ def get_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this user",
@@ -65,7 +69,7 @@ def get_user(
     return success_response(_serialize_user(user), "User retrieved successfully")
 
 
-@router.post("/")
+@router.post("")
 def create_user(user_in: UserCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     if db.query(User).filter(User.email == user_in.email).first():
         raise HTTPException(
@@ -99,7 +103,7 @@ def update_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -127,7 +131,7 @@ def update_user_password(
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     if not verify_password(payload.old_password, db_user.password_hash, db_user.username):
@@ -145,7 +149,7 @@ def get_user_preferences(
     db: Session = Depends(get_db),
     curr_user=Depends(get_current_user),
 ):
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     prefs = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
@@ -164,7 +168,7 @@ def update_user_preferences(
     db: Session = Depends(get_db),
     curr_user=Depends(get_current_user),
 ):
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     prefs = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
@@ -181,7 +185,7 @@ def update_user_preferences(
     return success_response(_serialize_prefs(prefs), "Preferences updated successfully")
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}")
 def delete_user(
     user_id: int, db: Session = Depends(get_db), curr_user=Depends(get_current_user)
 ):
@@ -190,9 +194,26 @@ def delete_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    if curr_user.role.value != "admin" and curr_user.id != user_id:
+    if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
         )
-    db.delete(db_user)
-    db.commit()
+        
+    try:
+        # Cascade delete auxiliary tables that safely can be removed
+        db.query(UserPreferences).filter(UserPreferences.user_id == user_id).delete(synchronize_session=False)
+        db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+        db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
+        db.query(StudentEnrollment).filter(StudentEnrollment.student_id == user_id).delete(synchronize_session=False)
+        
+        db.delete(db_user)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete user. They have associated attendance records or timetables.",
+        )
+    
+    return success_response(None, "User deleted successfully", 200)

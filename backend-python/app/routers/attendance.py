@@ -3,7 +3,7 @@ from typing import Optional
 import math
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.dependencies import get_db, get_current_user
 from app.core.exceptions import NotFoundError, ConflictError, ForbiddenError, ValidationError
@@ -11,10 +11,12 @@ from app.core.response import success_response
 from app.database.attendance_records import AttendanceRecord, AttendanceStatus
 from app.database.qr_codes import QRCode
 from app.database.otp_code import OTPCode
-from app.database.timetables import Timetable
+from app.database.timetables import Timetable, DayOfWeek
 from app.database.locations import Location
+from app.database.access_points import AccessPoint
 from app.database.student_enrollments import StudentEnrollment, EnrollmentStatus
 from app.database.user import User
+from app.database.subjects import Subject
 from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
 from app.services.attendance_ws import attendance_ws_manager
@@ -37,8 +39,8 @@ def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> f
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _serialize_record(r: AttendanceRecord) -> dict:
-    return {
+def _serialize_record(r: AttendanceRecord, include_timetable: bool = False) -> dict:
+    result = {
         "id": r.id,
         "timetable_id": r.timetable_id,
         "student_id": r.student_id,
@@ -53,6 +55,21 @@ def _serialize_record(r: AttendanceRecord) -> dict:
         "created_at": r.created_at.isoformat() if r.created_at else None,
         "updated_at": r.updated_at.isoformat() if r.updated_at else None,
     }
+    
+    if include_timetable and r.timetable:
+        timetable = r.timetable
+        subject = timetable.subject
+        result["timetable"] = {
+            "id": timetable.id,
+            "subject_name": subject.name if subject else None,
+            "subject_code": subject.code if subject else None,
+            "day_of_week": timetable.day_of_week.value if timetable.day_of_week else None,
+            "start_time": timetable.start_time.isoformat() if timetable.start_time else None,
+            "end_time": timetable.end_time.isoformat() if timetable.end_time else None,
+            "lecture_type": timetable.lecture_type.value if timetable.lecture_type else None,
+        }
+    
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +89,7 @@ async def mark_attendance(
       code          str        the code value
       latitude      float      optional – user GPS lat
       longitude     float      optional – user GPS lon
+      bssid        str        optional – WiFi access point MAC address
       device_info   str        optional
     """
     body = await request.json()
@@ -81,6 +99,7 @@ async def mark_attendance(
     code: Optional[str] = body.get("code")
     user_lat: Optional[float] = body.get("latitude")
     user_lon: Optional[float] = body.get("longitude")
+    bssid: Optional[str] = body.get("bssid")
     device_info: Optional[str] = body.get("device_info")
 
     if not timetable_id or not method or not code:
@@ -157,6 +176,22 @@ async def mark_attendance(
                 f"You are {distance:.0f}m away from the session location (max {location.radius}m)"
             )
 
+    # 5b. Access Point verification (if WiFi BSSID is configured for this location)
+    if bssid and location:
+        registered_ap = (
+            db.query(AccessPoint)
+            .filter(
+                AccessPoint.location_id == location.id,
+                AccessPoint.mac_address == bssid.upper(),
+                AccessPoint.is_active == True,
+            )
+            .first()
+        )
+        if not registered_ap:
+            raise ForbiddenError(
+                "You are not connected to the authorized WiFi network for this location"
+            )
+
     # 6. Create attendance record
     record = AttendanceRecord(
         timetable_id=timetable_id,
@@ -231,7 +266,9 @@ async def get_attendance_history(
     if not target:
         raise NotFoundError("User not found")
 
-    q = db.query(AttendanceRecord).filter(AttendanceRecord.student_id == user_id)
+    q = db.query(AttendanceRecord).options(
+        joinedload(AttendanceRecord.timetable).joinedload(Timetable.subject)
+    ).filter(AttendanceRecord.student_id == user_id)
 
     if timetable_id:
         q = q.filter(AttendanceRecord.timetable_id == timetable_id)
@@ -250,7 +287,7 @@ async def get_attendance_history(
 
     return success_response(
         {
-            "items": [_serialize_record(r) for r in records],
+            "items": [_serialize_record(r, include_timetable=True) for r in records],
             "total": total,
             "page": page,
             "limit": limit,
@@ -356,7 +393,7 @@ async def update_attendance_record(
 # GET /  —  list all records (admin only, paginated)
 # ---------------------------------------------------------------------------
 
-@router.get("/")
+@router.get("")
 def list_attendance_records(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),

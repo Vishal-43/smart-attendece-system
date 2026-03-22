@@ -17,27 +17,35 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isEmail = true;
   bool _loading = false;
   String? _error;
 
   Future<void> _handleLogin() async {
+    if (_identifierController.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter your email or username');
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      setState(() => _error = 'Please enter your password');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final authService = AuthService();
-      final success = await authService.login(
-        _emailController.text.trim(),
+      final result = await authService.login(
+        _isEmail ? _identifierController.text.trim() : '',
         _passwordController.text,
-        _usernameController.text.trim(),
+        !_isEmail ? _identifierController.text.trim() : '',
       );
       setState(() => _loading = false);
-      if (success) {
-        // Navigate to home or dashboard
+      if (result != null) {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/home');
         }
@@ -66,11 +74,30 @@ class _LoginFormState extends State<LoginForm> {
           FadeSlideTransition(
             animation: widget.animation,
             additionalOffset: 0.0,
-            child: CustomInputField(
-              label: 'Username',
-              prefixIcon: Icons.person,
-              obscureText: false,
-              controller: _usernameController,
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('Email'),
+                  selected: _isEmail,
+                  onSelected: (selected) {
+                    setState(() {
+                      _isEmail = true;
+                      _identifierController.clear();
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('Username'),
+                  selected: !_isEmail,
+                  onSelected: (selected) {
+                    setState(() {
+                      _isEmail = false;
+                      _identifierController.clear();
+                    });
+                  },
+                ),
+              ],
             ),
           ),
           SizedBox(height: space),
@@ -78,10 +105,10 @@ class _LoginFormState extends State<LoginForm> {
             animation: widget.animation,
             additionalOffset: 0.0,
             child: CustomInputField(
-              label: 'Email',
-              prefixIcon: Icons.email,
+              label: _isEmail ? 'Email' : 'Username',
+              prefixIcon: _isEmail ? Icons.email : Icons.person,
               obscureText: false,
-              controller: _emailController,
+              controller: _identifierController,
             ),
           ),
           SizedBox(height: space),

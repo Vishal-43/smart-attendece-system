@@ -1,166 +1,138 @@
-/*
- * variables.css
- * Single source of truth for all CSS custom properties.
- * Import this file first in globals.css and any component stylesheet.
- */
+/* ============================================================
+   DESIGN TOKENS - Enterprise Professional UI System
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* -------------------------------------------------------------------
-   * Brand / Primary
-   * ----------------------------------------------------------------- */
-  --color-primary:        #2563eb;
-  --color-primary-hover:  #1d4ed8;
-  --color-primary-light:  #3b82f6;
-  --color-primary-subtle: #dbeafe;
-  --color-primary-text:   #ffffff;
+  /* Font */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* -------------------------------------------------------------------
-   * Secondary
-   * ----------------------------------------------------------------- */
-  --color-secondary:        #0ea5e9;
-  --color-secondary-hover:  #0284c7;
-  --color-secondary-subtle: #e0f2fe;
+  /* Ink colors */
+  --ink-primary:   #0A0A0A;
+  --ink-secondary: #4A4A55;
+  --ink-hint:      #9A9AA8;
+  
+  /* Surfaces */
+  --bg-page:    #F3F3F7;
+  --bg-card:    #FFFFFF;
+  --bg-surface: rgba(0, 0, 0, 0.05);
+  --bg-input:   #FFFFFF;
 
-  /* -------------------------------------------------------------------
-   * Neutral / Surface
-   * ----------------------------------------------------------------- */
-  --color-bg:               #e8eef2;
-  --color-surface:          #f5f7fb;
-  --color-surface-2:        #f0f2f8;
-  --color-border:           #cfd8e3;
-  --color-border-strong:    #b0bec5;
+  /* Borders - Black solid */
+  --border:        1px solid #000000;
+  --border-hover:  2px solid #000000;
+  --border-focus:  2px solid #000000;
 
-  /* -------------------------------------------------------------------
-   * Text
-   * ----------------------------------------------------------------- */
-  --color-text:             #2c3e50;
-  --color-text-secondary:   #546e7a;
-  --color-text-muted:       #90a4ae;
-  --color-text-inverse:     #ffffff;
+  /* Glass Materials */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.92);
 
-  /* -------------------------------------------------------------------
-   * Dark-mode surfaces (used on login card, code/OTP panels, etc.)
-   * ----------------------------------------------------------------- */
-  --color-dark-card:        #0b0f14;
-  --color-dark-input:       #070a0f;
-  --color-dark-text:        #e6edf3;
-  --color-dark-text-muted:  #9da7b3;
-  --color-dark-border:      rgba(255, 255, 255, 0.06);
+  /* Semantic colors */
+  --success:        #22C55E;
+  --success-bg:     #F0FDF4;
+  --success-text:   #166534;
+  --success-border: #BBF7D0;
 
-  /* -------------------------------------------------------------------
-   * Status
-   * ----------------------------------------------------------------- */
-  --color-success:          #10b981;
-  --color-success-bg:       #d1fae5;
-  --color-success-border:   #6ee7b7;
+  --danger:         #EF4444;
+  --danger-bg:      #FEF2F2;
+  --danger-text:    #991B1B;
+  --danger-border:  #FECACA;
 
-  --color-warning:          #f59e0b;
-  --color-warning-bg:       #fef3c7;
-  --color-warning-border:   #fcd34d;
+  --warning:        #F59E0B;
+  --warning-bg:     #FFFBEB;
+  --warning-text:   #92400E;
+  --warning-border: #FDE68A;
 
-  --color-error:            #ef4444;
-  --color-error-bg:         #fee2e2;
-  --color-error-border:     #fca5a5;
+  --info:           #3B82F6;
+  --info-bg:        #EFF6FF;
+  --info-text:      #1E40AF;
+  --info-border:    #BFDBFE;
 
-  --color-info:             #3b82f6;
-  --color-info-bg:          #dbeafe;
-  --color-info-border:      #93c5fd;
+  --purple:         #8B5CF6;
+  --purple-bg:      #F5F3FF;
+  --purple-text:    #5B21B6;
+  --purple-border:  #DDD6FE;
 
-  /* -------------------------------------------------------------------
-   * Spacing scale (rem)
-   * ----------------------------------------------------------------- */
-  --space-1:  0.25rem;   /*  4px */
-  --space-2:  0.5rem;    /*  8px */
-  --space-3:  0.75rem;   /* 12px */
-  --space-4:  1rem;      /* 16px */
-  --space-5:  1.25rem;   /* 20px */
-  --space-6:  1.5rem;    /* 24px */
-  --space-8:  2rem;      /* 32px */
-  --space-10: 2.5rem;    /* 40px */
-  --space-12: 3rem;      /* 48px */
-  --space-16: 4rem;      /* 64px */
+  /* Radius */
+  --r-xs:  4px;
+  --r-sm:  6px;
+  --r-md:  8px;
+  --r-lg:  10px;
+  --r-xl:  12px;
+  --r-2xl: 16px;
+  --r-3xl: 20px;
+  --r-full: 9999px;
 
-  /* Legacy aliases kept for backward compat */
-  --spacing-xs:   var(--space-1);
-  --spacing-sm:   var(--space-2);
-  --spacing-md:   var(--space-4);
-  --spacing-lg:   var(--space-6);
-  --spacing-xl:   var(--space-8);
-  --spacing-2xl:  var(--space-12);
-  --spacing-3xl:  var(--space-16);
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(0, 0, 0, 0.08);
 
-  /* -------------------------------------------------------------------
-   * Border radius
-   * ----------------------------------------------------------------- */
-  --radius-xs:  0.25rem;
-  --radius-sm:  0.375rem;
-  --radius-md:  0.5rem;
-  --radius-lg:  0.75rem;
-  --radius-xl:  1rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 9999px;
+  /* Layout */
+  --sidebar-w: 220px;
+  --sidebar-w-collapsed: 72px;
+  --header-h: 58px;
 
-  /* Legacy aliases */
-  --radius-login-card: 14px;
-  --radius-input:      8px;
+  /* Transitions */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.20s ease;
+  --transition-slow:   0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  /* -------------------------------------------------------------------
-   * Shadows
-   * ----------------------------------------------------------------- */
-  --shadow-xs:  0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm:  0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
-  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+/* Dark mode - Inverted: White -> Black, Black -> White */
+[data-theme="dark"] {
+  /* Backgrounds - White becomes Black */
+  --bg-page:    #000000;
+  --bg-card:    #0a0a0a;
+  --bg-surface: #1a1a1a;
+  --bg-input:   #0a0a0a;
 
-  /* -------------------------------------------------------------------
-   * Typography
-   * ----------------------------------------------------------------- */
-  --font-sans:  'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono:  'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  /* Ink colors - Dark becomes Light */
+  --ink-primary:   #FFFFFF;
+  --ink-secondary: #CCCCCC;
+  --ink-tertiary:  #888888;
+  --ink-hint:      #666666;
 
-  --text-xs:    0.75rem;    /* 12px */
-  --text-sm:    0.875rem;   /* 14px */
-  --text-base:  1rem;       /* 16px */
-  --text-lg:    1.125rem;   /* 18px */
-  --text-xl:    1.25rem;    /* 20px */
-  --text-2xl:   1.5rem;     /* 24px */
-  --text-3xl:   1.875rem;   /* 30px */
-  --text-4xl:   2.25rem;    /* 36px */
+  /* Borders - Black becomes White */
+  --border:        #FFFFFF;
+  --border-hover:  #CCCCCC;
+  --border-focus:  #888888;
 
-  --leading-tight:  1.25;
-  --leading-snug:   1.375;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.625;
+  /* Glass Materials */
+  --glass-bg: rgba(18, 18, 22, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.1);
 
-  /* -------------------------------------------------------------------
-   * Transitions
-   * ----------------------------------------------------------------- */
-  --duration-fast:   150ms;
-  --duration-base:   200ms;
-  --duration-slow:   300ms;
-  --ease-default:    cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-in:         cubic-bezier(0.4, 0, 1, 1);
-  --ease-out:        cubic-bezier(0, 0, 0.2, 1);
+  --success-bg:   rgba(34, 197, 94, 0.2);
+  --success-text: #4ADE80;
+  --success-border: rgba(34, 197, 94, 0.3);
 
-  /* -------------------------------------------------------------------
-   * Z-index layers
-   * ----------------------------------------------------------------- */
-  --z-base:      0;
-  --z-dropdown:  100;
-  --z-sticky:    200;
-  --z-fixed:     300;
-  --z-modal:     400;
-  --z-popover:   500;
-  --z-toast:     600;
-  --z-tooltip:   700;
+  --danger-bg:    rgba(239, 68, 68, 0.2);
+  --danger-text:  #F87171;
+  --danger-border: rgba(239, 68, 68, 0.3);
 
-  /* -------------------------------------------------------------------
-   * Layout
-   * ----------------------------------------------------------------- */
-  --sidebar-width:         240px;
-  --sidebar-collapsed-w:   64px;
-  --header-height:         60px;
-  --content-max-width:     1280px;
+  --warning-bg:   rgba(245, 158, 11, 0.2);
+  --warning-text: #FBBF24;
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --info-bg:      rgba(59, 130, 246, 0.2);
+  --info-text:    #60A5FA;
+  --info-border:  rgba(59, 130, 246, 0.3);
+
+  --purple-bg:    rgba(139, 92, 246, 0.2);
+  --purple-text:  #A78BFA;
+  --purple-border: rgba(139, 92, 246, 0.3);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(242, 242, 240, 0.15);
 }

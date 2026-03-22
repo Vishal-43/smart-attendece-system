@@ -22,9 +22,9 @@ class AttendanceRepository {
     final params = <String, dynamic>{
       'page': page,
       'limit': limit,
-      'timetable_id': ?timetableId,
-      if (startDate    != null) 'start_date': _fmtDate(startDate),
-      if (endDate      != null) 'end_date':   _fmtDate(endDate),
+      if (timetableId != null) 'timetable_id': timetableId,
+      if (startDate != null) 'start_date': _fmtDate(startDate),
+      if (endDate != null) 'end_date': _fmtDate(endDate),
     };
 
     final result = await ApiClient.get<Map<String, dynamic>>(
@@ -50,9 +50,9 @@ class AttendanceRepository {
       'timetable_id': timetableId,
       'method': method,
       'code': code,
-      'latitude':    ?latitude,
-      'longitude':   ?longitude,
-      'device_info': ?deviceInfo,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (deviceInfo != null) 'device_info': deviceInfo,
     };
 
     final result = await ApiClient.post<Map<String, dynamic>>(

@@ -24,7 +24,7 @@ def _serialize_notification(record: Notification) -> dict:
     }
 
 
-@router.get("/")
+@router.get("")
 def list_notifications(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),

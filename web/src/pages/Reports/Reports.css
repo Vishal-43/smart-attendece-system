@@ -1,39 +1,82 @@
-.reports {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
+/* Reports.css — Modern Professional Reports */
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
 }
 
-.reports__header {
-  margin-bottom: var(--spacing-lg);
-}
-
-.reports__header h1 {
-  margin-bottom: var(--spacing-xs);
-}
-
-.reports__header p {
+.page-subtitle {
+  font-size: 14px;
+  color: var(--ink-secondary);
   margin: 0;
-  color: var(--glass-text-secondary);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .reports__filters {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: 16px;
   flex-wrap: wrap;
   align-items: flex-end;
 }
 
-.reports__chart {
-  margin-top: var(--spacing-lg);
-}
-
-.reports__table {
-  margin-top: var(--spacing-lg);
+.reports__filters .form-group {
+  min-width: 180px;
 }
 
 @media (max-width: 768px) {
   .reports__filters {
     flex-direction: column;
+    align-items: stretch;
   }
+  .reports__filters .form-group { min-width: 100%; }
+}
+
+/* Report cards */
+.report-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+.report-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-hover);
+}
+
+.report-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.report-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.report-card__subtitle {
+  font-size: 13px;
+  color: var(--ink-hint);
+  margin-top: 3px;
 }

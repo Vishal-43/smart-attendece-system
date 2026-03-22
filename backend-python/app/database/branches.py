@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.database.database import Base
 
@@ -17,3 +18,7 @@ class Branch(Base):
     updated_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False
     )
+
+    subjects = relationship("Subject", back_populates="branch")
+    divisions = relationship("Division", back_populates="branch")
+    course = relationship("Course", back_populates="branches")

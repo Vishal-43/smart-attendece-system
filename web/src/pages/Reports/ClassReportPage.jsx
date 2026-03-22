@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardBody, CardHeader, Select, Input, Loading } from '../../components/Common'
 import DataTable from '../../components/Common/DataTable'
@@ -25,7 +24,7 @@ export default function ClassReportPage() {
     { key: 'student_name', header: 'Student Name' },
     { key: 'student_email', header: 'Email' },
     { key: 'status', header: 'Status', render: (val) => val || 'Not Marked' },
-    { key: 'marked_at', header: 'Marked At', render: (val) => val ? new Date(val).toLocaleString() : '-' },
+    { key: 'marked_at', header: 'Marked At', render: (val) => val ? new Date(val).toLocaleString() : '—' },
   ]
 
   const tableData = report.students || []
@@ -35,26 +34,23 @@ export default function ClassReportPage() {
 
     const socket = new WebSocket(realtimeAPI.attendanceSocketUrl(selectedTimetableId))
     const ping = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send('ping')
-      }
+      if (socket.readyState === WebSocket.OPEN) socket.send('ping')
     }, 15000)
 
     socket.onmessage = () => {
       queryClient.invalidateQueries({ queryKey: ['reports', 'class', selectedTimetableId] })
     }
 
-    return () => {
-      clearInterval(ping)
-      socket.close()
-    }
+    return () => { clearInterval(ping); socket.close() }
   }, [selectedTimetableId, queryClient])
 
   return (
-    <div className="reports">
-      <div className="reports__header">
-        <h1>Class Report</h1>
-        <p>Class-wide attendance statistics</p>
+    <div className="page-inner">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Class Report</h1>
+          <p className="page-subtitle">Class-wide attendance statistics</p>
+        </div>
       </div>
 
       <Card>
@@ -65,7 +61,7 @@ export default function ClassReportPage() {
               value={selectedTimetableId}
               onChange={(e) => setSelectedTimetableId(e.target.value)}
             >
-              <option value="">-- Select a timetable --</option>
+              <option value="">— Select a timetable —</option>
               {Array.isArray(timetables) && timetables.map((tt) => (
                 <option key={tt.id} value={tt.id}>
                   {tt.subject} - {tt.day_of_week} {tt.start_time}
@@ -85,29 +81,19 @@ export default function ClassReportPage() {
             <Loading />
           ) : selectedTimetableId && report.total_students !== undefined ? (
             <>
-              <div className="class-summary" style={{ marginBottom: '2rem', display: 'flex', gap: '2rem' }}>
-                <div>
-                  <strong>Total Students:</strong> {report.total_students}
-                </div>
-                <div>
-                  <strong>Attended:</strong> {report.attended}
-                </div>
-                <div>
-                  <strong>Attendance %:</strong> {(report.attendance_percentage || 0).toFixed(2)}%
-                </div>
+              <div style={{ display: 'flex', gap: '24px', marginBottom: '16px', padding: '14px 16px', background: 'var(--bg-surface)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+                <div><strong>Total Students:</strong> <span style={{ marginLeft: 6 }}>{report.total_students}</span></div>
+                <div><strong>Attended:</strong> <span style={{ marginLeft: 6 }}>{report.attended_count || 0}</span></div>
+                <div><strong>Attendance %:</strong> <span style={{ marginLeft: 6 }}>{(report.attendance_percentage || 0).toFixed(2)}%</span></div>
               </div>
               {tableData.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={tableData}
-                  searchable={true}
-                />
+                <DataTable columns={columns} data={tableData} searchable={true} />
               ) : (
-                <p>No student data available for this class session</p>
+                <p style={{ color: 'var(--ink-500)', textAlign: 'center', padding: '40px' }}>No student data available for this class session</p>
               )}
             </>
           ) : (
-            <p>Please select a timetable to view class attendance report</p>
+            <p style={{ color: 'var(--ink-500)', textAlign: 'center', padding: '40px' }}>Select a timetable to view class attendance report</p>
           )}
         </CardBody>
       </Card>

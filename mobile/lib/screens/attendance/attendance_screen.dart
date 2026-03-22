@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/attendance/attendance_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/auth_service.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -13,9 +13,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   bool _loading = false;
   String? _result;
 
-  Future<String?> _getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_id');
+  Future<int?> _getUserId() async {
+    final authService = AuthService();
+    return await authService.getUserId();
   }
 
   Future<void> _markAttendance(String method) async {

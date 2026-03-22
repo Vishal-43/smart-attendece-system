@@ -1,16 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DioClient {
   static Dio? _dio;
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const _tokenKey = 'jwt_token';
 
-  static const String _androidEmulatorUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String _realDeviceUrl = 'http://192.168.0.101:8000/api/v1';
   static const String _localhostUrl = 'http://localhost:8000/api/v1';
 
-  /// Returns a Dio instance with a fresh auth token on every call.
-  /// The base Dio is cached, but the token is read fresh from SharedPreferences.
-  /// Use API_BASE_URL environment variable to override the default backend URL.
   static Future<Dio> getInstance() async {
     final baseUrl = _getBaseUrl();
 
@@ -28,9 +29,8 @@ class DioClient {
       _dio!.interceptors.add(_UnwrapInterceptor());
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-    if (token != null) {
+    final token = await _secureStorage.read(key: _tokenKey);
+    if (token != null && token.isNotEmpty) {
       _dio!.options.headers['Authorization'] = 'Bearer $token';
     } else {
       _dio!.options.headers.remove('Authorization');
@@ -40,7 +40,7 @@ class DioClient {
   }
 
   static String _getBaseUrl() {
-    const String? envUrl = String.fromEnvironment('API_BASE_URL');
+    const String envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) {
       return envUrl;
     }
@@ -50,7 +50,7 @@ class DioClient {
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return _androidEmulatorUrl;
+      return _realDeviceUrl;
     }
 
     return _localhostUrl;

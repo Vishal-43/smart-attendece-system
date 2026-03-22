@@ -1,6 +1,6 @@
 .glass-card {
   background: var(--glass-panel-bg);
-  border: 1px solid var(--glass-panel-border);
+  border: 1.5px solid var(--glass-panel-border);
   border-radius: var(--glass-radius-lg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -72,7 +72,7 @@
   justify-content: space-between;
   margin-bottom: var(--spacing-md);
   padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--glass-panel-border);
+  border-bottom: 1.5px solid var(--glass-panel-border);
 }
 
 .glass-card__title {
@@ -101,7 +101,7 @@
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
-  border-top: 1px solid var(--glass-panel-border);
+  border-top: 1.5px solid var(--glass-panel-border);
 }
 
 /* Stat card variant */

@@ -15,7 +15,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
+from app.core.dependencies import get_current_user, get_db
 from app.core.config import settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.redis_service import redis_service
@@ -37,14 +37,29 @@ def _make_otp() -> str:
 
 
 def _serialize_otp(otp: OTPCode) -> dict:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    remaining_seconds = 0
+    if otp.expires_at:
+        remaining = (otp.expires_at - now).total_seconds()
+        remaining_seconds = max(0, int(remaining))
+    
+    def to_utc_iso(dt):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            return dt.isoformat() + 'Z'
+        return dt.isoformat()
+    
     return {
         "id": otp.id,
         "timetable_id": otp.timetable_id,
         "code": otp.code,
-        "created_at": otp.created_at.isoformat() if otp.created_at else None,
-        "expires_at": otp.expires_at.isoformat() if otp.expires_at else None,
+        "created_at": to_utc_iso(otp.created_at),
+        "expires_at": to_utc_iso(otp.expires_at),
+        "expires_in": remaining_seconds,
         "used_count": otp.used_count,
-        "is_expired": otp.expires_at < datetime.now(timezone.utc).replace(tzinfo=None) if otp.expires_at else True,
+        "status": otp.status or "active",
+        "is_expired": otp.expires_at < now if otp.expires_at else True,
     }
 
 
@@ -143,6 +158,36 @@ async def get_current_otp(
 
 
 # ---------------------------------------------------------------------------
+# GET /status/{timetable_id}  (students can check if session is active)
+# ---------------------------------------------------------------------------
+
+@router.get("/status/{timetable_id}")
+async def get_otp_status(
+    timetable_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return OTP session status for students (without exposing the code)."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    otp = (
+        db.query(OTPCode)
+        .filter(OTPCode.timetable_id == timetable_id, OTPCode.expires_at > now)
+        .order_by(OTPCode.created_at.desc())
+        .first()
+    )
+    
+    if not otp:
+        return success_response({"has_active": False, "expires_in": 0})
+    
+    remaining = int((otp.expires_at - now).total_seconds())
+    return success_response({
+        "has_active": True,
+        "expires_in": remaining,
+        "expires_at": otp.expires_at.isoformat() + 'Z' if otp.expires_at else None,
+    })
+
+
+# ---------------------------------------------------------------------------
 # POST /refresh/{timetable_id}
 # ---------------------------------------------------------------------------
 
@@ -195,3 +240,93 @@ async def refresh_otp(
     )
 
     return success_response(_serialize_otp(otp), "OTP refreshed successfully")
+
+
+# ---------------------------------------------------------------------------
+# DELETE /{otp_id}  — cancel an OTP session
+# ---------------------------------------------------------------------------
+
+@router.delete("/{otp_id}")
+async def cancel_otp(
+    otp_id: int,
+    request: Request,
+    current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Cancel an active OTP session immediately."""
+    otp = db.query(OTPCode).filter(OTPCode.id == otp_id).first()
+    if not otp:
+        raise NotFoundError("OTP not found")
+
+    timetable = db.query(Timetable).filter(Timetable.id == otp.timetable_id).first()
+    if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
+        raise ForbiddenError("You can only cancel OTPs for your own timetables")
+
+    otp.status = "cancelled"
+    otp.expires_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.commit()
+
+    redis_key = OTP_REDIS_KEY.format(timetable_id=otp.timetable_id)
+    redis_service.delete(redis_key)
+
+    await log_action(
+        db,
+        action="OTP_CANCELLED",
+        entity_type="otp_code",
+        user_id=current_user.id,
+        entity_id=str(otp.id),
+        details={"timetable_id": otp.timetable_id},
+        request=request,
+    )
+
+    return success_response(_serialize_otp(otp), "OTP cancelled")
+
+
+# ---------------------------------------------------------------------------
+# DELETE /cancel/{timetable_id}  — cancel OTP session by timetable_id
+# ---------------------------------------------------------------------------
+
+@router.delete("/cancel/{timetable_id}")
+async def cancel_otp_by_timetable(
+    timetable_id: int,
+    request: Request,
+    current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Cancel an active OTP session by timetable ID."""
+    timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
+    if not timetable:
+        raise NotFoundError("Timetable not found")
+
+    if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
+        raise ForbiddenError("You can only cancel OTPs for your own timetables")
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    otp = (
+        db.query(OTPCode)
+        .filter(OTPCode.timetable_id == timetable_id, OTPCode.expires_at > now)
+        .order_by(OTPCode.created_at.desc())
+        .first()
+    )
+    
+    if otp:
+        otp.status = "cancelled"
+        otp.expires_at = now
+        db.commit()
+        
+        redis_key = OTP_REDIS_KEY.format(timetable_id=timetable_id)
+        redis_service.delete(redis_key)
+
+        await log_action(
+            db,
+            action="OTP_CANCELLED",
+            entity_type="otp_code",
+            user_id=current_user.id,
+            entity_id=str(otp.id),
+            details={"timetable_id": timetable_id},
+            request=request,
+        )
+        
+        return success_response({"cancelled": True, "otp_id": otp.id}, "OTP session cancelled")
+    
+    return success_response({"cancelled": False}, "No active OTP session found")

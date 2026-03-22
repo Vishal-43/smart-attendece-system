@@ -1,6 +1,7 @@
 // wifi_service.dart
-// Service for getting WiFi SSID and BSSID using network_info_plus
+// Service for getting WiFi SSID, BSSID, and IP using network_info_plus
 
+import 'package:flutter/foundation.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
@@ -11,7 +12,6 @@ class WifiService {
   /// Get current WiFi SSID (network name)
   Future<String?> getWifiSSID() async {
     try {
-      // Request location permission (required for WiFi info on Android)
       if (Platform.isAndroid) {
         final status = await Permission.locationWhenInUse.request();
         if (!status.isGranted) {
@@ -20,9 +20,9 @@ class WifiService {
       }
 
       final ssid = await _networkInfo.getWifiName();
-      return ssid;
+      return ssid?.replaceAll('"', '');
     } catch (e) {
-      print('Error getting WiFi SSID: $e');
+      debugPrint('Error getting WiFi SSID: $e');
       return null;
     }
   }
@@ -40,20 +40,68 @@ class WifiService {
       final bssid = await _networkInfo.getWifiBSSID();
       return bssid;
     } catch (e) {
-      print('Error getting WiFi BSSID: $e');
+      debugPrint('Error getting WiFi BSSID: $e');
       return null;
     }
   }
 
-  /// Get complete WiFi info as a formatted string
-  Future<String> getWifiInfo() async {
+  /// Get the device's local IP address on the WiFi network
+  Future<String?> getWifiIP() async {
+    try {
+      if (Platform.isAndroid) {
+        final status = await Permission.locationWhenInUse.request();
+        if (!status.isGranted) {
+          return null;
+        }
+      }
+
+      final ip = await _networkInfo.getWifiIP();
+      return ip;
+    } catch (e) {
+      debugPrint('Error getting WiFi IP: $e');
+      return null;
+    }
+  }
+
+  /// Get gateway IP (router IP)
+  Future<String?> getWifiGatewayIP() async {
+    try {
+      if (Platform.isAndroid) {
+        final status = await Permission.locationWhenInUse.request();
+        if (!status.isGranted) {
+          return null;
+        }
+      }
+
+      final gateway = await _networkInfo.getWifiGatewayIP();
+      return gateway;
+    } catch (e) {
+      debugPrint('Error getting WiFi Gateway IP: $e');
+      return null;
+    }
+  }
+
+  /// Get complete WiFi info
+  Future<Map<String, String?>> getCompleteWifiInfo() async {
     final ssid = await getWifiSSID();
     final bssid = await getWifiBSSID();
-    
-    if (ssid == null && bssid == null) {
-      return 'Not connected to WiFi';
+    final ip = await getWifiIP();
+    final gateway = await getWifiGatewayIP();
+
+    return {'ssid': ssid, 'bssid': bssid, 'ip': ip, 'gateway': gateway};
+  }
+
+  /// Format MAC address to standard format (AA:BB:CC:DD:EE:FF)
+  String formatMacAddress(String? mac) {
+    if (mac == null || mac.isEmpty) return '';
+
+    final cleaned = mac.replaceAll(':', '').replaceAll('-', '').toUpperCase();
+    if (cleaned.length != 12) return mac;
+
+    final parts = <String>[];
+    for (var i = 0; i < 12; i += 2) {
+      parts.add(cleaned.substring(i, i + 2));
     }
-    
-    return 'SSID: ${ssid ?? "Unknown"}, BSSID: ${bssid ?? "Unknown"}';
+    return parts.join(':');
   }
 }

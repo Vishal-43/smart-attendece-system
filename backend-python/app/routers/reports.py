@@ -13,7 +13,7 @@ import io
 from app.core.dependencies import get_db, get_current_user, require_admin, require_role
 from app.core.exceptions import NotFoundError
 from app.core.response import success_response
-from app.database.attendance_records import AttendanceRecord
+from app.database.attendance_records import AttendanceRecord, AttendanceStatus
 from app.database.student_enrollments import StudentEnrollment
 from app.database.timetables import Timetable as TimeTable
 from app.database.user import User
@@ -51,7 +51,7 @@ def get_attendance_summary(
         query = query.filter(func.date(AttendanceRecord.marked_at) <= end_date)
     
     # If student, only show their own records
-    if current_user.role.value == 'student':
+    if current_user.role.value == 'STUDENT':
         query = query.filter(AttendanceRecord.student_id == current_user.id)
     
     # Apply division filter (join through timetable and enrollment)
@@ -121,7 +121,7 @@ def get_student_report(
     Teachers/admins can view any student.
     """
     # Authorization: student can only view own, teachers/admins can view all
-    if current_user.role.value == 'student' and current_user.id != user_id:
+    if current_user.role.value == 'STUDENT' and current_user.id != user_id:
         from app.core.exceptions import ForbiddenError
         raise ForbiddenError()
     
@@ -218,7 +218,7 @@ def get_class_report(
     timetable_id: int,
     session_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role('teacher', 'admin'))
+    current_user: User = Depends(require_role('TEACHER', 'ADMIN'))
 ):
     """
     Get per-session attendance list with student names and attendance percentage.
@@ -232,7 +232,7 @@ def get_class_report(
         raise NotFoundError(message=f"Timetable with id {timetable_id} not found")
     
     # Authorization: teachers can only view their own timetables
-    if current_user.role.value == 'teacher' and timetable.teacher_id != current_user.id:
+    if current_user.role.value == 'TEACHER' and timetable.teacher_id != current_user.id:
         from app.core.exceptions import ForbiddenError
         raise ForbiddenError(message="You can only view attendance for your own classes")
     
@@ -283,7 +283,7 @@ def get_class_report(
     
     return success_response({
         'timetable_id': timetable_id,
-        'timetable_name': f"{timetable.subject} - {division.name if division else 'N/A'}",
+        'timetable_name': f"{timetable.subject.name if timetable.subject else 'N/A'} - {division.name if division else 'N/A'}",
         'session_date': session_date.isoformat() if session_date else 'all',
         'total_students': total_students,
         'attended': attended_count,
@@ -298,7 +298,7 @@ def export_attendance_csv(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role('teacher', 'admin'))
+    current_user: User = Depends(require_role('TEACHER', 'ADMIN'))
 ):
     """
     Export attendance records as CSV.
@@ -315,12 +315,12 @@ def export_attendance_csv(
             raise NotFoundError(message=f"Timetable with id {timetable_id} not found")
         
         # Authorization check for teachers
-        if current_user.role.value == 'teacher' and timetable.teacher_id != current_user.id:
+        if current_user.role.value == 'TEACHER' and timetable.teacher_id != current_user.id:
             from app.core.exceptions import ForbiddenError
             raise ForbiddenError(message="You can only export your own classes")
         
         query = query.filter(AttendanceRecord.timetable_id == timetable_id)
-    elif current_user.role.value == 'teacher':
+    elif current_user.role.value == 'TEACHER':
         # If no timetable specified and user is teacher, only show their classes
         teacher_timetables = db.query(TimeTable.id).filter(TimeTable.teacher_id == current_user.id).all()
         timetable_ids = [t[0] for t in teacher_timetables]
@@ -363,7 +363,7 @@ def export_attendance_csv(
             f"{student.first_name} {student.last_name}" if student else 'Unknown',
             student.email if student else 'N/A',
             record.timetable_id,
-            timetable.subject if timetable else 'N/A',
+            timetable.subject.name if timetable and timetable.subject else 'N/A',
             record.status,
             record.method,
             record.marked_at.isoformat() if record.marked_at else '',
@@ -390,28 +390,11 @@ def get_division_attendance(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("teacher", "admin")),
+    current_user: User = Depends(require_role("TEACHER", "ADMIN")),
 ):
     role_value = current_user.role.value if hasattr(current_user.role, "value") else current_user.role
 
-    query = (
-        db.query(
-            Division.id.label("division_id"),
-            Division.name.label("division_name"),
-            func.count(AttendanceRecord.id).label("total"),
-            func.sum(case((AttendanceRecord.status == "present", 1), else_=0)).label("present"),
-            func.sum(case((AttendanceRecord.status == "late", 1), else_=0)).label("late"),
-        )
-        .join(TimeTable, TimeTable.division_id == Division.id)
-        .join(AttendanceRecord, AttendanceRecord.timetable_id == TimeTable.id)
-    )
-
-    if start_date:
-        query = query.filter(func.date(AttendanceRecord.marked_at) >= start_date)
-    if end_date:
-        query = query.filter(func.date(AttendanceRecord.marked_at) <= end_date)
-
-    if role_value == "teacher":
+    if role_value == "TEACHER":
         query = query.filter(TimeTable.teacher_id == current_user.id)
 
     rows = query.group_by(Division.id, Division.name).order_by(Division.name.asc()).all()

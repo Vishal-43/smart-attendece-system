@@ -1,41 +1,67 @@
+/* NotFoundPage.css — Modern Professional 404 Page */
+
 .not-found {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--glass-bg-primary) 0%, var(--glass-bg-secondary) 100%);
-  padding: var(--spacing-lg);
+  min-height: calc(100vh - var(--header-h));
+  padding: 40px 24px;
+  position: relative;
+}
+
+.not-found::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .not-found__card {
-  max-width: 500px;
-  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  padding: 48px;
+  animation: scaleIn 0.3s ease;
 }
 
 .not-found__content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--spacing-2xl) 0;
+  gap: 20px;
 }
 
 .not-found__icon {
-  color: var(--glass-warning);
-  margin-bottom: var(--spacing-lg);
+  color: var(--ink-hint);
+  opacity: 0.4;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .not-found__title {
-  font-size: var(--text-3xl);
-  margin: var(--spacing-lg) 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink-primary);
+  letter-spacing: -0.025em;
+  margin: 0;
 }
 
 .not-found__message {
-  color: var(--glass-text-secondary);
-  margin-bottom: var(--spacing-2xl);
+  font-size: 15px;
+  color: var(--ink-secondary);
+  line-height: 1.7;
+  max-width: 320px;
+  margin: 0;
 }
 
 .not-found__link {
-  text-decoration: none;
+  margin-top: 8px;
 }

@@ -1,12 +1,9 @@
-// student_mark_attendance_screen.dart
-// Student screen for marking attendance using QR scanner or manual OTP entry
-
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../services/location_service.dart';
 import '../../services/wifi_service.dart';
+import '../../services/qr_otp/qr_otp_service.dart';
 import '../../core/network/network_result.dart';
 import '../../features/attendance/attendance_repository.dart';
 import 'package:geolocator/geolocator.dart';
@@ -30,6 +27,7 @@ class _StudentMarkAttendanceScreenState
   final _repo = const AttendanceRepository();
   final _locationService = LocationService();
   final _wifiService = WifiService();
+  final _qrOtpService = QrOtpService();
 
   MobileScannerController? _scannerController;
   bool _isSubmitting = false;
@@ -37,7 +35,14 @@ class _StudentMarkAttendanceScreenState
   String? _errorMessage;
   bool _hasScanned = false;
 
-  // Location and WiFi info
+  bool _loadingSession = true;
+  Map<String, dynamic>? _activeQr;
+  Map<String, dynamic>? _activeOtp;
+  int _qrExpiresIn = 0;
+  int _otpExpiresIn = 0;
+  Timer? _refreshTimer;
+  Timer? _countdownTimer;
+
   Position? _position;
   String? _wifiInfo;
 
@@ -47,23 +52,84 @@ class _StudentMarkAttendanceScreenState
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
     _initializeServices();
+    _fetchSessionStatus();
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    _countdownTimer?.cancel();
     _tabController.dispose();
     _otpController.dispose();
     _scannerController?.dispose();
     super.dispose();
   }
 
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _countdownTimer?.cancel();
+
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) _fetchSessionStatus(showLoading: false);
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          if (_qrExpiresIn > 0) _qrExpiresIn--;
+          if (_otpExpiresIn > 0) _otpExpiresIn--;
+        });
+      }
+    });
+  }
+
+  Future<void> _fetchSessionStatus({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() => _loadingSession = true);
+    }
+
+    try {
+      final qrResponse = await _qrOtpService.getQrStatus(widget.timetableId);
+      final otpResponse = await _qrOtpService.getOtpStatus(widget.timetableId);
+
+      if (mounted) {
+        setState(() {
+          final qrData = qrResponse.data?['data'];
+          final otpData = otpResponse.data?['data'];
+
+          _activeQr = qrData?['has_active'] == true
+              ? {'has_active': true, 'expires_in': qrData?['expires_in'] ?? 0}
+              : null;
+          _activeOtp = otpData?['has_active'] == true
+              ? {'has_active': true, 'expires_in': otpData?['expires_in'] ?? 0}
+              : null;
+
+          if (_activeQr != null) {
+            _qrExpiresIn = _activeQr!['expires_in'] ?? 0;
+          }
+          if (_activeOtp != null) {
+            _otpExpiresIn = _activeOtp!['expires_in'] ?? 0;
+          }
+
+          _loadingSession = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Session status error: $e');
+      if (mounted) {
+        setState(() {
+          _loadingSession = false;
+        });
+      }
+    }
+  }
+
   void _onTabChanged() {
     if (_tabController.index == 0) {
-      // QR Scanner tab - restart scanner
       _hasScanned = false;
       _scannerController?.start();
     } else {
-      // OTP tab - stop scanner to save battery
       _scannerController?.stop();
     }
 
@@ -74,19 +140,25 @@ class _StudentMarkAttendanceScreenState
   }
 
   Future<void> _initializeServices() async {
-    // Get location
     try {
       _position = await _locationService.getCurrentLocation();
     } catch (e) {
       debugPrint('Location error: $e');
     }
 
-    // Get WiFi info
     try {
-      _wifiInfo = await _wifiService.getWifiInfo();
+      final wifiInfo = await _wifiService.getCompleteWifiInfo();
+      _wifiInfo =
+          'SSID: ${wifiInfo['ssid'] ?? 'Unknown'}, BSSID: ${wifiInfo['bssid'] ?? 'Unknown'}';
     } catch (e) {
       debugPrint('WiFi error: $e');
     }
+  }
+
+  String _formatTime(int seconds) {
+    final mins = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   Future<void> _markAttendance(String method, String code) async {
@@ -99,7 +171,6 @@ class _StudentMarkAttendanceScreenState
     });
 
     try {
-      // Ensure we have fresh location
       _position ??= await _locationService.getCurrentLocation();
 
       final result = await _repo.markAttendance(
@@ -119,27 +190,48 @@ class _StudentMarkAttendanceScreenState
           _isSubmitting = false;
         });
 
-        // Clear OTP input if on OTP tab
         if (method == 'otp') {
           _otpController.clear();
         }
 
-        // Show success and go back after delay
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             Navigator.of(context).pop();
           }
         });
       } else if (result is Failure) {
+        final errorMsg = result.errorOrNull?.message ?? 'Unknown error';
+        String message = errorMsg;
+
+        if (message.toLowerCase().contains('invalid code')) {
+          message =
+              'Invalid or expired code. Ask your teacher to generate a new one.';
+        } else if (message.toLowerCase().contains('expired')) {
+          message =
+              'The code has expired. Ask your teacher to generate a new one.';
+        } else if (message.toLowerCase().contains('already marked')) {
+          message =
+              'You have already marked attendance for this session today.';
+        } else if (message.toLowerCase().contains('not enrolled')) {
+          message = 'You are not enrolled in this class.';
+        } else if (message.toLowerCase().contains('location')) {
+          message =
+              'You are not at the correct location. Please check with your teacher.';
+        } else if (message.toLowerCase().contains('wifi') ||
+            message.toLowerCase().contains('authorized')) {
+          message = 'You are not connected to the authorized WiFi network.';
+        }
+
         setState(() {
-          _errorMessage = (result as Failure).error.message;
+          _errorMessage = message;
           _isSubmitting = false;
-          _hasScanned = false; // Allow retry on scanner tab
+          _hasScanned = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Mark attendance error: $e\n$stackTrace');
       setState(() {
-        _errorMessage = 'Failed to mark attendance: $e';
+        _errorMessage = 'An unexpected error occurred. Please try again.';
         _isSubmitting = false;
         _hasScanned = false;
       });
@@ -153,7 +245,23 @@ class _StudentMarkAttendanceScreenState
     if (scannedCode != null && scannedCode.isNotEmpty) {
       _hasScanned = true;
       _scannerController?.stop();
-      _markAttendance('qr', scannedCode);
+
+      String codeToSubmit = scannedCode;
+
+      if (scannedCode.startsWith('{')) {
+        try {
+          final codeMatch = RegExp(
+            r'"code"\s*:\s*"([^"]+)"',
+          ).firstMatch(scannedCode);
+          if (codeMatch != null) {
+            codeToSubmit = codeMatch.group(1) ?? scannedCode;
+          }
+        } catch (e) {
+          debugPrint('Failed to parse QR JSON: $e');
+        }
+      }
+
+      _markAttendance('qr', codeToSubmit);
     }
   }
 
@@ -163,28 +271,291 @@ class _StudentMarkAttendanceScreenState
     }
   }
 
+  Widget _buildSessionStatus() {
+    final colors = Theme.of(context).colorScheme;
+    final hasQrSession = _activeQr != null && _qrExpiresIn > 0;
+    final hasOtpSession = _activeOtp != null && _otpExpiresIn > 0;
+
+    if (_loadingSession) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 8),
+            Text('Checking for active sessions...'),
+          ],
+        ),
+      );
+    }
+
+    if (!hasQrSession && !hasOtpSession) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.errorContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: colors.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No active session',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colors.error,
+                    ),
+                  ),
+                  Text(
+                    'Ask your teacher to start QR/OTP attendance',
+                    style: TextStyle(fontSize: 12, color: colors.error),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchSessionStatus,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.check_circle, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Session Active',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colors.primary,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 20),
+                onPressed: _fetchSessionStatus,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (hasQrSession) ...[
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.qr_code, size: 16, color: colors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'QR: ${_formatTime(_qrExpiresIn)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: colors.primary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (hasQrSession && hasOtpSession) const SizedBox(width: 8),
+              if (hasOtpSession) ...[
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.password, size: 16, color: colors.secondary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'OTP: ${_formatTime(_otpExpiresIn)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: colors.secondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOTPDisplay() {
+    if (_activeOtp == null || _otpExpiresIn <= 0)
+      return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [colors.secondary, colors.secondary.withValues(alpha: 0.8)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: colors.secondary.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Your OTP Code',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _activeOtp!['code'] ?? '------',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 8,
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Expires in ${_formatTime(_otpExpiresIn)}',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mark Attendance'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.qr_code_scanner), text: 'Scan QR'),
-            Tab(icon: Icon(Icons.password), text: 'Enter OTP'),
-          ],
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchSessionStatus,
+            tooltip: 'Refresh session',
+          ),
+        ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildQRScannerTab(), _buildOTPTab()],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildSessionStatus(),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [_buildQRScannerTab(), _buildOTPTab()],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildQRScannerTab() {
     final colors = Theme.of(context).colorScheme;
+    final hasQrSession = _activeQr != null && _qrExpiresIn > 0;
+
+    if (!hasQrSession && !_loadingSession) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: colors.errorContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.qr_code_scanner,
+                  size: 64,
+                  color: colors.error,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'No QR Session Active',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your teacher needs to start a QR attendance session first',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Stack(
       children: [
         MobileScanner(
@@ -275,22 +646,28 @@ class _StudentMarkAttendanceScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (_position != null)
+                if (_qrExpiresIn > 0) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'QR expires in ${_formatTime(_qrExpiresIn)}',
+                    style: TextStyle(
+                      color: _qrExpiresIn < 60
+                          ? colors.error
+                          : colors.onSurface,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                if (_position != null) ...[
+                  const SizedBox(height: 4),
                   Text(
                     'Location: ${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
                     style: TextStyle(
                       color: colors.onSurface.withValues(alpha: 0.8),
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                   ),
-                if (_wifiInfo != null)
-                  Text(
-                    _wifiInfo!,
-                    style: TextStyle(
-                      color: colors.onSurface.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
-                  ),
+                ],
               ],
             ),
           ),
@@ -301,6 +678,42 @@ class _StudentMarkAttendanceScreenState
 
   Widget _buildOTPTab() {
     final colors = Theme.of(context).colorScheme;
+    final hasOtpSession = _activeOtp != null && _otpExpiresIn > 0;
+
+    if (!hasOtpSession && !_loadingSession) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: colors.secondaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.password, size: 64, color: colors.secondary),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'No OTP Session Active',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your teacher needs to start an OTP attendance session first',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -308,6 +721,7 @@ class _StudentMarkAttendanceScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _buildOTPDisplay(),
             const Text(
               'Enter 6-digit OTP',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -324,12 +738,8 @@ class _StudentMarkAttendanceScreenState
               keyboardType: TextInputType.number,
               maxLength: 6,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter OTP';
-                }
-                if (value.length != 6) {
-                  return 'OTP must be 6 digits';
-                }
+                if (value == null || value.isEmpty) return 'Please enter OTP';
+                if (value.length != 6) return 'OTP must be 6 digits';
                 return null;
               },
             ),
@@ -341,7 +751,10 @@ class _StudentMarkAttendanceScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Location: ${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
+                      'Location: ${0}...'.replaceAll(
+                        '${0}',
+                        '${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
+                      ),
                       style: TextStyle(
                         fontSize: 12,
                         color: colors.onSurfaceVariant,

@@ -9,7 +9,7 @@ class TimeTableBase(BaseModel):
     division_id: int
     teacher_id: int
     location_id: int
-    subject: str
+    subject_id: int
     lecture_type: LectureType
     batch_id: Optional[int] = None
     day_of_week: DayOfWeek
@@ -29,7 +29,7 @@ class TimeTableUpdate(BaseModel):
     division_id: Optional[int] = None
     teacher_id: Optional[int] = None
     location_id: Optional[int] = None
-    subject: Optional[str] = None
+    subject_id: Optional[int] = None
     lecture_type: Optional[LectureType] = None
     batch_id: Optional[int] = None
     day_of_week: Optional[DayOfWeek] = None
@@ -43,5 +43,6 @@ class TimeTableUpdate(BaseModel):
 class TimeTableOut(TimeTableBase):
     model_config = ConfigDict(from_attributes=True, extra="ignore")
     id: int
+    subject_name: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

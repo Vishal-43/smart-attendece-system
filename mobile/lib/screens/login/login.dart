@@ -8,9 +8,7 @@ import 'widgets/login_form.dart';
 class Login extends StatefulWidget {
   final double screenHeight;
 
-  const Login({super.key, 
-    required this.screenHeight,
-  });
+  const Login({super.key, required this.screenHeight});
 
   @override
   State<Login> createState() => _LoginState();
@@ -33,22 +31,18 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     );
 
     final fadeSlideTween = Tween<double>(begin: 0.0, end: 1.0);
-    _headerTextAnimation = fadeSlideTween.animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(
-        0.0,
-        0.6,
-        curve: Curves.easeInOut,
+    _headerTextAnimation = fadeSlideTween.animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
       ),
-    ));
-    _formElementAnimation = fadeSlideTween.animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(
-        0.7,
-        1.0,
-        curve: Curves.easeInOut,
+    );
+    _formElementAnimation = fadeSlideTween.animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.7, 1.0, curve: Curves.easeInOut),
       ),
-    ));
+    );
 
     final clipperOffsetTween = Tween<double>(
       begin: widget.screenHeight,
@@ -57,31 +51,19 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     _blueTopClipperAnimation = clipperOffsetTween.animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(
-          0.2,
-          0.7,
-          curve: Curves.easeInOut,
-        ),
+        curve: const Interval(0.2, 0.7, curve: Curves.easeInOut),
       ),
     );
     _greyTopClipperAnimation = clipperOffsetTween.animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(
-          0.35,
-          0.7,
-          curve: Curves.easeInOut,
-        ),
+        curve: const Interval(0.35, 0.7, curve: Curves.easeInOut),
       ),
     );
     _whiteTopClipperAnimation = clipperOffsetTween.animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(
-          0.5,
-          0.7,
-          curve: Curves.easeInOut,
-        ),
+        curve: const Interval(0.5, 0.7, curve: Curves.easeInOut),
       ),
     );
 
@@ -97,59 +79,72 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: kWhite,
-      body: Stack(
-        children: <Widget>[
-          AnimatedBuilder(
-            animation: _whiteTopClipperAnimation,
-            builder: (_, Widget? child) {
-              return ClipPath(
-                clipper: WhiteTopClipper(
-                  yOffset: _whiteTopClipperAnimation.value,
-                ),
-                child: child,
-              );
-            },
-            child: Container(color: kGrey),
-          ),
-          AnimatedBuilder(
-            animation: _greyTopClipperAnimation,
-            builder: (_, Widget? child) {
-              return ClipPath(
-                clipper: GreyTopClipper(
-                  yOffset: _greyTopClipperAnimation.value,
-                ),
-                child: child,
-              );
-            },
-            child: Container(color: kBlue),
-          ),
-          AnimatedBuilder(
-            animation: _blueTopClipperAnimation,
-            builder: (_, Widget? child) {
-              return ClipPath(
-                clipper: BlueTopClipper(
-                  yOffset: _blueTopClipperAnimation.value,
-                ),
-                child: child,
-              );
-            },
-            child: Container(color: kWhite),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: kPaddingL),
-              child: Column(
-                children: <Widget>[
-                  Header(animation: _headerTextAnimation),
-                  const Spacer(),
-                  LoginForm(animation: _formElementAnimation),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: <Widget>[
+              AnimatedBuilder(
+                animation: _whiteTopClipperAnimation,
+                builder: (_, Widget? child) {
+                  return ClipPath(
+                    clipper: WhiteTopClipper(
+                      yOffset: _whiteTopClipperAnimation.value,
+                    ),
+                    child: child,
+                  );
+                },
+                child: Container(color: kGrey),
               ),
-            ),
-          ),
-        ],
+              AnimatedBuilder(
+                animation: _greyTopClipperAnimation,
+                builder: (_, Widget? child) {
+                  return ClipPath(
+                    clipper: GreyTopClipper(
+                      yOffset: _greyTopClipperAnimation.value,
+                    ),
+                    child: child,
+                  );
+                },
+                child: Container(color: kBlue),
+              ),
+              AnimatedBuilder(
+                animation: _blueTopClipperAnimation,
+                builder: (_, Widget? child) {
+                  return ClipPath(
+                    clipper: BlueTopClipper(
+                      yOffset: _blueTopClipperAnimation.value,
+                    ),
+                    child: child,
+                  );
+                },
+                child: Container(color: kWhite),
+              ),
+              SafeArea(
+                child: SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                          constraints.maxHeight -
+                          MediaQuery.of(context).padding.top,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: kPaddingL),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Header(animation: _headerTextAnimation),
+                          LoginForm(animation: _formElementAnimation),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

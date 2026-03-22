@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Card, CardHeader, CardBody, Input, Button, Loading } from '../../components/Common'
+import { Card, CardHeader, CardBody, Button, Loading } from '../../components/Common'
 import { useAuthStore } from '../../stores/authStore'
 import { useToast } from '../../hooks/useToast'
 import { updateUserPassword } from '../../api/services'
+import { Shield, Lock, Eye, EyeOff, Check, X } from 'lucide-react'
 import './Settings.css'
 
 export default function SettingsPage() {
@@ -16,6 +17,17 @@ export default function SettingsPage() {
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [showPasswords, setShowPasswords] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  })
+
+  const passwordRequirements = [
+    { test: (p) => p.length >= 8, label: 'At least 8 characters' },
+    { test: (p) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+    { test: (p) => /[0-9]/.test(p), label: 'One number' },
+  ]
 
   const validateForm = () => {
     const newErrors = {}
@@ -55,47 +67,154 @@ export default function SettingsPage() {
   if (!user) return <Loading />
 
   return (
-    <div className="settings">
-      <div className="settings__header">
-        <h1>Settings</h1>
-        <p>Manage your account settings and preferences</p>
+    <div className="page-inner">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-subtitle">Manage your account settings and preferences</p>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <h3>Change Password</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--r-lg)',
+              background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#fff'
+            }}>
+              <Shield size={20} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Security Settings</h3>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--ink-hint)' }}>Update your password to keep your account secure</p>
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleChangePassword} className="settings__form">
-            <Input
-              label="Current Password"
-              type="password"
-              value={formData.oldPassword}
-              onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
-              placeholder="Enter your current password"
-              error={errors.oldPassword}
-              disabled={loading}
-            />
+            <div className="form-group">
+              <label className="form-group__label">Current Password</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
+                <input
+                  type={showPasswords.old ? 'text' : 'password'}
+                  value={formData.oldPassword}
+                  onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                  placeholder="Enter your current password"
+                  className={`input ${errors.oldPassword ? 'input--error' : ''}`}
+                  style={{ paddingLeft: '44px', paddingRight: '44px' }}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, old: !showPasswords.old })}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--ink-hint)',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {showPasswords.old ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.oldPassword && <span className="form-group__error">{errors.oldPassword}</span>}
+            </div>
 
-            <Input
-              label="New Password"
-              type="password"
-              value={formData.newPassword}
-              onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-              placeholder="Enter a new password (min 8 characters)"
-              error={errors.newPassword}
-              disabled={loading}
-            />
+            <div className="form-group">
+              <label className="form-group__label">New Password</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
+                <input
+                  type={showPasswords.new ? 'text' : 'password'}
+                  value={formData.newPassword}
+                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                  placeholder="Enter a new password"
+                  className={`input ${errors.newPassword ? 'input--error' : ''}`}
+                  style={{ paddingLeft: '44px', paddingRight: '44px' }}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--ink-hint)',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.newPassword && <span className="form-group__error">{errors.newPassword}</span>}
+              
+              {formData.newPassword && (
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {passwordRequirements.map((req, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: req.test(formData.newPassword) ? 'var(--green-text)' : 'var(--ink-hint)' }}>
+                      {req.test(formData.newPassword) ? <Check size={14} /> : <X size={14} />}
+                      {req.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              placeholder="Confirm your new password"
-              error={errors.confirmPassword}
-              disabled={loading}
-            />
+            <div className="form-group">
+              <label className="form-group__label">Confirm New Password</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
+                <input
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Confirm your new password"
+                  className={`input ${errors.confirmPassword ? 'input--error' : ''}`}
+                  style={{ paddingLeft: '44px', paddingRight: '44px' }}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--ink-hint)',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.confirmPassword && <span className="form-group__error">{errors.confirmPassword}</span>}
+            </div>
 
             <div className="settings__actions">
               <Button 
@@ -103,7 +222,12 @@ export default function SettingsPage() {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Saving...' : 'Change Password'}
+                {loading ? (
+                  <>
+                    <span className="spinner" />
+                    Updating...
+                  </>
+                ) : 'Change Password'}
               </Button>
             </div>
           </form>
