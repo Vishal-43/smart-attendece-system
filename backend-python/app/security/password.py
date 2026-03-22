@@ -10,9 +10,10 @@ pwd_context = CryptContext(
     pbkdf2_sha256__default_salt_size=int(os.getenv("SALT_SIZE")),
 )
 
-
+# for testing **
 def hash_password(password: str, user: str) -> str:
-    return pwd_context.hash(password + user)
+    # Don't concatenate - just hash the password
+    return pwd_context.hash(password[:72])  # Limit to 72 bytes as bcrypt requires
 
 
 def verify_password(password: str, hashed_password: str, user: str) -> str:
