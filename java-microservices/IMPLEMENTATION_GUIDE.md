@@ -116,12 +116,12 @@ cd ..
 ```bash
 cd auth-service
 mvn clean package
-mvn spring-boot:run -Dspring-boot.run.arguments="--python.backend.url=http://localhost:8000"
+mvn spring-boot:run "-Dspring-boot.run.arguments=--python.backend.url=http://localhost:8000"
 
 # In another terminal
 cd qr-otp-service
 mvn clean package
-mvn spring-boot:run -Dspring-boot.run.arguments="--python.backend.url=http://localhost:8000"
+mvn spring-boot:run "-Dspring-boot.run.arguments=--python.backend.url=http://localhost:8000"
 
 # Continue with other services...
 ```
