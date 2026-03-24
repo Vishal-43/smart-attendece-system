@@ -340,42 +340,45 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> {
                         loc['name'] ?? 'Unknown',
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (loc['room_no'] != null)
-                            Text(
-                              'Room: ${loc['room_no']}',
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          if (loc['floor'] != null)
-                            Text(
-                              'Floor: ${loc['floor']}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.my_location,
-                                size: 12,
-                                color: colors.outline,
+                      subtitle: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 200),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (loc['room_no'] != null)
+                              Text(
+                                'Room: ${loc['room_no']}',
+                                style: const TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  '${loc['latitude']?.toStringAsFixed(4)}, ${loc['longitude']?.toStringAsFixed(4)}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: colors.outline,
-                                    fontFamily: 'monospace',
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                            if (loc['floor'] != null)
+                              Text(
+                                'Floor: ${loc['floor']}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.my_location,
+                                  size: 12,
+                                  color: colors.outline,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${loc['latitude']?.toStringAsFixed(4)}, ${loc['longitude']?.toStringAsFixed(4)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: colors.outline,
+                                      fontFamily: 'monospace',
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {

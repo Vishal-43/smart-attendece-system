@@ -37,9 +37,9 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
     }
     try {
       final service = AttendanceService();
-      final response = await service.getAttendanceRecords(userId);
+      final data = await service.getAttendanceRecords(userId);
       setState(() {
-        _records = response.data['items'] ?? [];
+        _records = data['items'] as List<dynamic>? ?? [];
         _loading = false;
       });
     } catch (e) {

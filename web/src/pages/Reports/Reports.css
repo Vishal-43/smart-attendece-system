@@ -1,4 +1,6 @@
-/* Reports.css — Modern Professional Reports */
+/* ============================================================
+   REPORTS PAGES - Modern Professional Reports
+   ============================================================ */
 
 .page-title {
   font-size: 22px;
@@ -22,7 +24,7 @@
   margin-bottom: 28px;
   padding: 24px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: var(--border);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm);
 }
@@ -36,25 +38,19 @@
 
 .reports__filters .form-group {
   min-width: 180px;
-}
-
-@media (max-width: 768px) {
-  .reports__filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .reports__filters .form-group { min-width: 100%; }
+  margin-bottom: 0;
 }
 
 /* Report cards */
 .report-card {
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: var(--border);
   border-radius: var(--r-xl);
   padding: 24px;
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
 }
+
 .report-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border-hover);
@@ -66,17 +62,83 @@
   justify-content: space-between;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1.5px solid var(--border);
+  border-bottom: var(--border);
 }
 
 .report-card__title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--ink-primary);
 }
 
 .report-card__subtitle {
   font-size: 13px;
-  color: var(--ink-hint);
+  color: var(--ink-secondary);
   margin-top: 3px;
+}
+
+/* Chart containers */
+.report-card__chart {
+  height: 300px;
+  margin-top: 16px;
+}
+
+/* Summary stats */
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.report-stat {
+  background: var(--bg-card);
+  border: var(--border);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.report-stat__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.report-stat__content {
+  flex: 1;
+}
+
+.report-stat__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  letter-spacing: -0.02em;
+}
+
+.report-stat__label {
+  font-size: 13px;
+  color: var(--ink-secondary);
+  margin-top: 2px;
+}
+
+/* Report content with spacing */
+.report-content {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reports__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .reports__filters .form-group { min-width: 100%; }
 }

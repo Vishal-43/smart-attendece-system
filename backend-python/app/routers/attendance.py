@@ -17,6 +17,20 @@ from app.database.access_points import AccessPoint
 from app.database.student_enrollments import StudentEnrollment, EnrollmentStatus
 from app.database.user import User
 from app.database.subjects import Subject
+from app.schemas.attendance_records import MarkAttendanceRequest
+
+def _serialize_record_with_student(r: AttendanceRecord) -> dict:
+    """Serialize record with student info for teacher/admin view."""
+    result = _serialize_record(r, include_timetable=True)
+    if r.student:
+        result["student"] = {
+            "id": r.student.id,
+            "first_name": r.student.first_name,
+            "last_name": r.student.last_name,
+            "enrollment_no": getattr(r.student, 'enrollment_no', None),
+            "email": r.student.email,
+        }
+    return result
 from app.security.permissions import UserRole, require_role
 from app.services.audit_service import log_action
 from app.services.attendance_ws import attendance_ws_manager
@@ -79,43 +93,42 @@ def _serialize_record(r: AttendanceRecord, include_timetable: bool = False) -> d
 @router.post("/mark")
 async def mark_attendance(
     request: Request,
+    body: MarkAttendanceRequest,
     current_user: User = Depends(require_role(UserRole.STUDENT)),
     db: Session = Depends(get_db),
 ):
-    """
-    Body JSON fields:
-      timetable_id  int        required
-      method        str        "qr" | "otp"
-      code          str        the code value
-      latitude      float      optional – user GPS lat
-      longitude     float      optional – user GPS lon
-      bssid        str        optional – WiFi access point MAC address
-      device_info   str        optional
-    """
-    body = await request.json()
+    method = body.method
+    code = body.code
+    user_lat = body.latitude
+    user_lon = body.longitude
+    bssid = body.bssid
+    device_info = body.device_info
 
-    timetable_id: Optional[int] = body.get("timetable_id")
-    method: Optional[str] = body.get("method")
-    code: Optional[str] = body.get("code")
-    user_lat: Optional[float] = body.get("latitude")
-    user_lon: Optional[float] = body.get("longitude")
-    bssid: Optional[str] = body.get("bssid")
-    device_info: Optional[str] = body.get("device_info")
+    device_info_str = device_info or f"method={method}"
 
-    if not timetable_id or not method or not code:
-        raise ValidationError("timetable_id, method, and code are required")
+    # 1. Validate code and get timetable_id FROM the code (not from request body)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if method == "qr":
+        entry = db.query(QRCode).filter(QRCode.code == code).first()
+    else:
+        entry = db.query(OTPCode).filter(OTPCode.code == code).first()
 
-    if method not in ("qr", "otp"):
-        raise ValidationError("method must be 'qr' or 'otp'")
+    if not entry:
+        raise ValidationError("Invalid code")
+    if entry.expires_at < now:
+        raise ValidationError("Code has expired")
+    
+    # Use timetable_id from the QR/OTP code itself (security fix)
+    actual_timetable_id = entry.timetable_id
 
-    # 1. Timetable exists and is active
-    timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
+    # 2. Timetable exists and is active
+    timetable = db.query(Timetable).filter(Timetable.id == actual_timetable_id).first()
     if not timetable:
         raise NotFoundError("Timetable not found")
     if not timetable.is_active:
         raise ForbiddenError("This timetable session is not active")
 
-    # 2. Student is enrolled in the timetable's division
+    # 3. Student is enrolled in the timetable's division
     enrollment = (
         db.query(StudentEnrollment)
         .filter(
@@ -128,12 +141,12 @@ async def mark_attendance(
     if not enrollment:
         raise ForbiddenError("You are not enrolled in this division")
 
-    # 3. No duplicate attendance for today's session
+    # 4. No duplicate attendance for today's session
     today_start = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
     duplicate = (
         db.query(AttendanceRecord)
         .filter(
-            AttendanceRecord.timetable_id == timetable_id,
+            AttendanceRecord.timetable_id == actual_timetable_id,
             AttendanceRecord.student_id == current_user.id,
             AttendanceRecord.marked_at >= today_start,
         )
@@ -142,59 +155,112 @@ async def mark_attendance(
     if duplicate:
         raise ConflictError("Attendance already marked for this session today")
 
-    # 4. Validate code and expiry
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if method == "qr":
-        entry = (
-            db.query(QRCode)
-            .filter(QRCode.timetable_id == timetable_id, QRCode.code == code)
-            .first()
-        )
-    else:
-        entry = (
-            db.query(OTPCode)
-            .filter(OTPCode.timetable_id == timetable_id, OTPCode.code == code)
-            .first()
-        )
-
-    if not entry:
-        raise ValidationError("Invalid code")
-    if entry.expires_at < now:
-        raise ValidationError("Code has expired")
-
     # 5. Geofencing (if location has coordinates and student provided coordinates)
     location: Optional[Location] = None
     if timetable.location_id:
         location = db.query(Location).filter(Location.id == timetable.location_id).first()
 
-    if location and location.latitude and location.longitude and location.radius:
-        if user_lat is None or user_lon is None:
-            raise ValidationError("GPS coordinates required for this session")
-        distance = _haversine_distance(user_lat, user_lon, location.latitude, location.longitude)
-        if distance > location.radius:
-            raise ForbiddenError(
-                f"You are {distance:.0f}m away from the session location (max {location.radius}m)"
-            )
+    # 5. Location Verification (BOTH GPS + WiFi required if location has any verification configured)
+    location_requires_gps = (
+        location and 
+        location.latitude is not None and 
+        location.longitude is not None and 
+        location.radius is not None and
+        location.radius > 0
+    )
+    
+    location_requires_wifi = (
+        location and 
+        bssid
+    )
 
-    # 5b. Access Point verification (if WiFi BSSID is configured for this location)
-    if bssid and location:
-        registered_ap = (
+    gps_passed = False
+    wifi_passed = False
+    errors = []
+
+    # GPS Verification
+    if location_requires_gps:
+        if user_lat is None or user_lon is None:
+            errors.append("GPS coordinates required. Please enable location services.")
+        else:
+            distance = _haversine_distance(user_lat, user_lon, location.latitude, location.longitude)
+            if distance > location.radius:
+                errors.append(f"You are {distance:.0f}m away from the session location (max {location.radius}m).")
+            else:
+                gps_passed = True
+
+    # WiFi BSSID Verification
+    if location_requires_wifi:
+        registered_aps = (
             db.query(AccessPoint)
             .filter(
                 AccessPoint.location_id == location.id,
-                AccessPoint.mac_address == bssid.upper(),
                 AccessPoint.is_active == True,
             )
-            .first()
+            .all()
         )
-        if not registered_ap:
-            raise ForbiddenError(
-                "You are not connected to the authorized WiFi network for this location"
+        
+        if registered_aps:
+            bssid_upper = bssid.upper()
+            bssid_matched = any(
+                ap.mac_address and ap.mac_address.upper() == bssid_upper 
+                for ap in registered_aps
             )
+            
+            if not bssid_matched:
+                errors.append("You are not connected to the authorized WiFi network for this location.")
+            else:
+                wifi_passed = True
+        else:
+            # No access points registered, skip WiFi check
+            wifi_passed = True
+
+    # Check if location has verification requirements
+    location_has_gps_config = location_requires_gps
+    location_has_wifi_config = (
+        location and 
+        db.query(AccessPoint)
+        .filter(
+            AccessPoint.location_id == location.id,
+            AccessPoint.is_active == True,
+        )
+        .count() > 0
+    )
+
+    # Fail if GPS is required but not passed
+    if location_has_gps_config and not gps_passed:
+        raise ForbiddenError(errors[0] if errors else "GPS verification failed.")
+
+    # Fail if WiFi is required but not passed
+    if location_has_wifi_config and not wifi_passed:
+        raise ForbiddenError("WiFi verification failed. Please connect to campus WiFi.")
+
+    # 6. Create attendance record
+        registered_aps = (
+            db.query(AccessPoint)
+            .filter(
+                AccessPoint.location_id == location.id,
+                AccessPoint.is_active == True,
+            )
+            .all()
+        )
+        
+        if registered_aps:
+            bssid_upper = bssid.upper()
+            bssid_matched = any(
+                ap.mac_address and ap.mac_address.upper() == bssid_upper 
+                for ap in registered_aps
+            )
+            
+            if not bssid_matched:
+                raise ForbiddenError(
+                    "You are not connected to the authorized WiFi network for this location. "
+                    f"Please connect to the campus WiFi (registered APs: {len(registered_aps)})."
+                )
 
     # 6. Create attendance record
     record = AttendanceRecord(
-        timetable_id=timetable_id,
+        timetable_id=actual_timetable_id,
         student_id=current_user.id,
         enrollment_id=enrollment.id,
         teacher_id=timetable.teacher_id,
@@ -203,7 +269,7 @@ async def mark_attendance(
         location_id=timetable.location_id,
         marked_at=now,
         status=AttendanceStatus.PRESENT,
-        device_info=device_info,
+        device_info=device_info_str,
     )
     db.add(record)
     entry.used_count = (entry.used_count or 0) + 1
@@ -219,7 +285,7 @@ async def mark_attendance(
         )
 
     await attendance_ws_manager.broadcast(
-        timetable_id,
+        actual_timetable_id,
         {
             "event": "attendance_marked",
             "record": _serialize_record(record),
@@ -236,7 +302,7 @@ async def mark_attendance(
         entity_type="attendance_record",
         user_id=current_user.id,
         entity_id=str(record.id),
-        details={"timetable_id": timetable_id, "method": method},
+        details={"timetable_id": actual_timetable_id, "method": method},
         request=request,
     )
 
@@ -340,6 +406,121 @@ async def get_session_attendance(
 
 
 # ---------------------------------------------------------------------------
+# POST /mark-absent/{timetable_id}  —  mark all unenrolled students as absent
+# ---------------------------------------------------------------------------
+
+@router.post("/mark-absent/{timetable_id}")
+async def mark_absent_students(
+    timetable_id: int,
+    session_date: Optional[date] = Query(None, description="Date for the session (YYYY-MM-DD). Defaults to today."),
+    request: Request = None,
+    current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Mark all enrolled students who haven't marked attendance as ABSENT.
+    
+    This should be called after a session ends to automatically mark absent students.
+    """
+    timetable = db.query(Timetable).filter(Timetable.id == timetable_id).first()
+    if not timetable:
+        raise NotFoundError("Timetable not found")
+
+    if current_user.role == UserRole.TEACHER and timetable.teacher_id != current_user.id:
+        raise ForbiddenError("You are not the teacher for this timetable")
+
+    target_date = session_date or date.today()
+    
+    # Use UTC for database queries but display local date
+    day_start_utc = datetime.combine(target_date, datetime.min.time())
+    day_end_utc = datetime.combine(target_date, datetime.max.time())
+
+    # Get enrolled students for this division
+    enrollment_query = (
+        db.query(StudentEnrollment)
+        .filter(
+            StudentEnrollment.division_id == timetable.division_id,
+            StudentEnrollment.status == EnrollmentStatus.ACTIVE,
+        )
+    )
+    
+    # If timetable has a batch, filter by batch too
+    if timetable.batch_id:
+        enrollment_query = enrollment_query.filter(
+            StudentEnrollment.batch_id == timetable.batch_id
+        )
+    
+    enrolled_students = enrollment_query.all()
+
+    # Get students who already marked attendance for this session
+    existing_records = (
+        db.query(AttendanceRecord)
+        .filter(
+            AttendanceRecord.timetable_id == timetable_id,
+        )
+        .all()
+    )
+    
+    # Filter to today's records in Python (handles timezone better)
+    today_records = [
+        r for r in existing_records 
+        if r.marked_at and r.marked_at.date() == target_date
+    ]
+    marked_student_ids = set(r.student_id for r in today_records)
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    marked_absent = 0
+    skipped_already_marked = 0
+
+    for enrollment in enrolled_students:
+        if enrollment.student_id in marked_student_ids:
+            skipped_already_marked += 1
+            continue
+
+        record = AttendanceRecord(
+            timetable_id=timetable_id,
+            student_id=enrollment.student_id,
+            enrollment_id=enrollment.id,
+            teacher_id=timetable.teacher_id,
+            division_id=timetable.division_id,
+            batch_id=timetable.batch_id,
+            location_id=timetable.location_id,
+            marked_at=now,
+            status=AttendanceStatus.ABSENT,
+            device_info="system:marked_absent",
+        )
+        db.add(record)
+        marked_absent += 1
+
+    db.commit()
+
+    await log_action(
+        db,
+        action="ABSENT_STUDENTS_MARKED",
+        entity_type="attendance_batch",
+        user_id=current_user.id,
+        entity_id=str(timetable_id),
+        details={
+            "timetable_id": timetable_id,
+            "date": target_date.isoformat(),
+            "marked_absent": marked_absent,
+            "skipped_already_marked": skipped_already_marked,
+        },
+        request=request,
+    )
+
+    return success_response(
+        {
+            "timetable_id": timetable_id,
+            "date": target_date.isoformat(),
+            "marked_absent": marked_absent,
+            "skipped_already_marked": skipped_already_marked,
+            "total_enrolled": len(enrolled_students),
+        },
+        f"Marked {marked_absent} students as absent"
+    )
+
+
+# ---------------------------------------------------------------------------
 # PUT /{attendance_id}  —  update status (teacher/admin)
 # ---------------------------------------------------------------------------
 
@@ -417,3 +598,50 @@ def list_attendance_records(
             "pages": math.ceil(total / limit) if total > 0 else 0,
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /today  —  today's attendance for teacher/admin
+# ---------------------------------------------------------------------------
+
+@router.get("/today")
+def get_today_attendance(
+    current_user: User = Depends(require_role(UserRole.TEACHER, UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Get all attendance records for today. Teachers see their own, admins see all."""
+    today = date.today()
+    day_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=None)
+    day_end = datetime.combine(today, datetime.max.time()).replace(tzinfo=None)
+    
+    query = (
+        db.query(AttendanceRecord)
+        .options(
+            joinedload(AttendanceRecord.student),
+            joinedload(AttendanceRecord.timetable).joinedload(Timetable.subject)
+        )
+        .filter(
+            AttendanceRecord.marked_at >= day_start,
+            AttendanceRecord.marked_at <= day_end,
+        )
+    )
+    
+    # Teachers only see their own students' attendance
+    if current_user.role == UserRole.TEACHER:
+        query = query.filter(AttendanceRecord.teacher_id == current_user.id)
+    
+    records = query.order_by(AttendanceRecord.marked_at.desc()).all()
+    
+    present_students = [_serialize_record_with_student(r) for r in records if r.status == AttendanceStatus.PRESENT]
+    absent_students = [_serialize_record_with_student(r) for r in records if r.status == AttendanceStatus.ABSENT]
+    late_students = [_serialize_record_with_student(r) for r in records if r.status == AttendanceStatus.LATE]
+    
+    return success_response({
+        "date": today.isoformat(),
+        "total": len(records),
+        "present_count": len(present_students),
+        "absent_count": len(absent_students),
+        "late_count": len(late_students),
+        "items": present_students + late_students,
+        "all_records": [_serialize_record_with_student(r) for r in records],
+    })

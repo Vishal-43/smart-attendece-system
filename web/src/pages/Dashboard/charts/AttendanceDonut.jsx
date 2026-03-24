@@ -12,14 +12,14 @@ const CustomTooltip = ({ active, payload }) => {
       color: 'var(--ink-primary)',
       boxShadow: 'var(--shadow-lg)',
     }}>
-      <strong style={{ color: 'var(--ink-primary)' }}>{payload[0].name}</strong>
-      <span style={{ marginLeft: 6, fontWeight: 600, color: 'var(--ink-secondary)' }}>{payload[0].value}%</span>
+      <strong>{payload[0].name}</strong>
+      <span style={{ marginLeft: 8, fontWeight: 700, color: payload[0].payload.color }}>{payload[0].value}%</span>
     </div>
   )
 }
 
 export default function AttendanceDonut({ data }) {
-  if (!data || data.length === 0) {
+  if (!data || data.length === 0 || data.every(d => d.value === 0)) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -42,19 +42,19 @@ export default function AttendanceDonut({ data }) {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      gap: 24,
+      gap: 28,
       width: '100%',
       height: '100%'
     }}>
-      <div style={{ position: 'relative', width: 140, height: 140 }}>
+      <div style={{ position: 'relative', width: 150, height: 150 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={48}
-              outerRadius={68}
+              innerRadius={52}
+              outerRadius={72}
               paddingAngle={3}
               dataKey="value"
               startAngle={90}
@@ -78,7 +78,7 @@ export default function AttendanceDonut({ data }) {
           pointerEvents: 'none'
         }}>
           <div style={{
-            fontSize: 22,
+            fontSize: 26,
             fontWeight: 800,
             color: 'var(--ink-primary)',
             letterSpacing: '-0.03em',
@@ -89,33 +89,34 @@ export default function AttendanceDonut({ data }) {
           <div style={{ 
             fontSize: 10, 
             color: 'var(--ink-hint)', 
-            marginTop: 2, 
+            marginTop: 4, 
             fontWeight: 600, 
             textTransform: 'uppercase', 
-            letterSpacing: '0.05em' 
+            letterSpacing: '0.06em' 
           }}>Present</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 110 }}>
         {data.map(d => (
           <div key={d.name} style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
+            gap: 12,
             fontSize: 13,
             color: 'var(--ink-secondary)',
           }}>
             <div style={{
-              width: 10,
-              height: 10,
+              width: 11,
+              height: 11,
               borderRadius: '50%',
               background: d.color,
               flexShrink: 0,
+              boxShadow: `0 2px 8px ${d.color}40`,
             }} />
             <span style={{ flex: 1 }}>{d.name}</span>
             <span style={{
-              fontWeight: 600,
+              fontWeight: 700,
               color: 'var(--ink-primary)',
             }}>
               {d.value}%

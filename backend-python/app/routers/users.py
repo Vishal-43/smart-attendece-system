@@ -134,8 +134,11 @@ def update_user_password(
     if curr_user.role.value != "ADMIN" and curr_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if not verify_password(payload.old_password, db_user.password_hash, db_user.username):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
+    # Admins can change any user's password without verifying old password
+    # Users changing their own password must verify old password
+    if curr_user.role.value != "ADMIN":
+        if not verify_password(payload.old_password, db_user.password_hash, db_user.username):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is invalid")
 
     db_user.password_hash = hash_password(payload.new_password, db_user.username)
     db.commit()

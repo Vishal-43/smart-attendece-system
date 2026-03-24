@@ -564,7 +564,7 @@ class _TimetableTabState extends State<TimetableTab>
     return Column(
       children: [
         Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          margin: const EdgeInsets.fromLTRB(16, 60, 16, 0),
           decoration: BoxDecoration(
             color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),

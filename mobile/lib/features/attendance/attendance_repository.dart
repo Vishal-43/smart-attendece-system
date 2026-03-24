@@ -44,6 +44,7 @@ class AttendanceRepository {
     required String code,
     double? latitude,
     double? longitude,
+    String? bssid,
     String? deviceInfo,
   }) async {
     final body = <String, dynamic>{
@@ -52,6 +53,7 @@ class AttendanceRepository {
       'code': code,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
+      if (bssid != null) 'bssid': bssid,
       if (deviceInfo != null) 'device_info': deviceInfo,
     };
 

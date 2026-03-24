@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { login as loginService } from '../../api/services'
-import { Button, Input, Alert } from '../../components/Common'
-import { LayoutDashboard, Mail, Lock, LogIn } from 'lucide-react'
+import { LayoutDashboard, LogIn, AlertCircle, Mail, Lock } from 'lucide-react'
 import './Auth.css'
 
 export default function LoginPage() {
@@ -36,83 +35,90 @@ export default function LoginPage() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-logo">
-            <LayoutDashboard size={26} color="#fff" strokeWidth={2} />
+      <div className="auth-wrapper">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">
+              <LayoutDashboard size={24} />
+            </div>
+            <h1 className="auth-title">Welcome back</h1>
+            <p className="auth-subtitle">Sign in to your account to continue</p>
           </div>
-          <h1 className="auth-title">Smart Attendance</h1>
-          <p className="auth-subtitle">Sign in to your admin account</p>
+
+          {error && (
+            <div className="auth-error">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label className="form-label">Username</label>
+              <div className="form-input-wrapper">
+                <Mail size={16} />
+                <input
+                  name="username"
+                  value={form.username}
+                  onChange={handleChange}
+                  placeholder="Enter your username"
+                  required
+                  autoComplete="username"
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <div className="form-input-wrapper">
+                <Lock size={16} />
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  required
+                  autoComplete="current-password"
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="auth-options">
+              <label className="auth-checkbox-label">
+                <input type="checkbox" />
+                <span>Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="auth-forgot">
+                Forgot password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              className="auth-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="auth-spinner" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={16} />
+                  <span>Sign in</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            Don't have an account? <Link to="/register">Sign up</Link>
+          </div>
         </div>
-
-        {error && (
-          <Alert type="error" message={error} onClose={() => setError('')} />
-        )}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label className="form-group__label">Username</label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
-              <input
-                name="username"
-                value={form.username}
-                onChange={handleChange}
-                placeholder="Enter your username"
-                required
-                autoComplete="username"
-                className="input"
-                style={{ paddingLeft: '44px' }}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-group__label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-hint)' }} />
-              <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                required
-                autoComplete="current-password"
-                className="input"
-                style={{ paddingLeft: '44px' }}
-              />
-            </div>
-          </div>
-
-          <div className="auth-remember">
-            <label className="auth-remember-label">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-            <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
-          </div>
-
-          <Button
-            variant="primary"
-            size="lg"
-            type="submit"
-            disabled={loading}
-            style={{ marginTop: '8px' }}
-          >
-            {loading ? (
-              <>
-                <span className="spinner" />
-                Signing in...
-              </>
-            ) : (
-              <>
-                <LogIn size={18} />
-                Sign in
-              </>
-            )}
-          </Button>
-        </form>
       </div>
     </div>
   )

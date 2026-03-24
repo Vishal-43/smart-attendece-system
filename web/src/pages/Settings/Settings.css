@@ -1,4 +1,6 @@
-/* Settings.css — Modern Professional Settings */
+/* ============================================================
+   SETTINGS PAGES - Modern Professional Settings
+   ============================================================ */
 
 .page-title {
   font-size: 22px;
@@ -18,7 +20,7 @@
   margin-bottom: 28px;
   padding: 24px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border);
+  border: var(--border);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm);
 }
@@ -35,21 +37,26 @@
   display: flex;
   gap: 12px;
   padding-top: 24px;
-  border-top: 1.5px solid var(--border);
+  border-top: var(--border);
   justify-content: flex-end;
+  margin-top: 16px;
 }
 
 .settings__section {
-  margin-bottom: 32px;
+  background: var(--bg-card);
+  border: var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  margin-bottom: 24px;
 }
 
 .settings__section-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink-primary);
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1.5px solid var(--border);
+  border-bottom: var(--border);
 }
 
 .settings__row {
@@ -57,7 +64,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 0;
-  border-bottom: 1.5px solid var(--border);
+  border-bottom: var(--border);
 }
 .settings__row:last-child { border-bottom: none; }
 
@@ -69,6 +76,58 @@
 
 .settings__row-desc {
   font-size: 13px;
-  color: var(--ink-hint);
+  color: var(--ink-secondary);
   margin-top: 3px;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch__slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-surface);
+  border: var(--border);
+  border-radius: var(--r-full);
+  transition: all var(--transition-fast);
+}
+
+.toggle-switch__slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: var(--bg-card);
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-switch input:checked + .toggle-switch__slider {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-switch__slider::before {
+  left: 23px;
+}
+
+/* Settings content spacing */
+.settings-content {
+  padding: 24px;
+  margin-bottom: 16px;
 }

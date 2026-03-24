@@ -1,29 +1,26 @@
-import { createContext, useContext, useEffect } from 'react'
-import { useUIStore } from '../stores/uiStore'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext()
 
 export function ThemeProvider({ children }) {
-  const theme = useUIStore((s) => s.theme)
-  const toggleTheme = useUIStore((s) => s.toggleTheme)
+  const [theme, setTheme] = useState('light')
 
-  // Apply theme when it changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
-
-  // Also apply on initial mount from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('ui-store')
-    let storedTheme = 'light'
+    const saved = localStorage.getItem('theme')
     if (saved) {
-      try {
-        const { state } = JSON.parse(saved)
-        if (state?.theme) storedTheme = state.theme
-      } catch {}
+      setTheme(saved)
+      document.documentElement.setAttribute('data-theme', saved)
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
     }
-    document.documentElement.setAttribute('data-theme', storedTheme)
   }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    document.documentElement.setAttribute('data-theme', newTheme)
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -35,7 +32,7 @@ export function ThemeProvider({ children }) {
 export function useTheme() {
   const context = useContext(ThemeContext)
   if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider')
+    throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
 }

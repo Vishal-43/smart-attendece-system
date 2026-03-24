@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../services/attendance/attendance_service.dart';
@@ -75,19 +76,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     String code;
 
     try {
-      final Map<String, dynamic> qrData = Map<String, dynamic>.from(
-        Uri.splitQueryString(
-          rawValue,
-        ).map((key, value) => MapEntry(key, value)),
-      );
-      if (qrData.containsKey('code') && qrData.containsKey('timetable_id')) {
-        code = qrData['code']!;
-        timetableId = int.tryParse(qrData['timetable_id']!);
+      if (rawValue.startsWith('{')) {
+        final Map<String, dynamic> qrData = jsonDecode(rawValue);
+        code = qrData['code']?.toString() ?? '';
+        timetableId = qrData['timetable_id'] as int?;
       } else {
         code = rawValue;
       }
     } catch (e) {
       code = rawValue;
+      timetableId = null;
     }
 
     if (timetableId == null) {

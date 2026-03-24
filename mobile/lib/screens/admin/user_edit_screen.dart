@@ -136,7 +136,7 @@ class _UserEditScreenState extends State<UserEditScreen> {
                 decoration: const InputDecoration(labelText: 'Phone'),
               ),
               DropdownButtonFormField<String>(
-                initialValue: _role,
+                value: _role,
                 items: const [
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                   DropdownMenuItem(value: 'teacher', child: Text('Teacher')),

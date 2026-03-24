@@ -91,12 +91,27 @@ class QrOtpService {
     return await dio.delete('/otp/cancel/$timetableId');
   }
 
+  /// Mark all absent students for a session
+  /// POST /api/v1/attendance/mark-absent/{timetableId}
+  Future<Response> markAbsentStudents(
+    int timetableId, {
+    String? sessionDate,
+  }) async {
+    final dio = await DioClient.getInstance();
+    final params = <String, dynamic>{};
+    if (sessionDate != null) params['session_date'] = sessionDate;
+    return await dio.post(
+      '/attendance/mark-absent/$timetableId',
+      queryParameters: params.isNotEmpty ? params : null,
+    );
+  }
+
   // ── Timetables (for dropdown) ─────────────────────────────────────────────
 
-  /// Get list of timetables (for teacher/admin)
-  /// GET /api/v1/timetables
+  /// Get list of timetables for the current teacher/admin
+  /// GET /api/v1/timetables/my-schedule
   Future<Response> getTimetables() async {
     final dio = await DioClient.getInstance();
-    return await dio.get('/timetables');
+    return await dio.get('/timetables/my-schedule');
   }
 }

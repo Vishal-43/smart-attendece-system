@@ -240,8 +240,8 @@ class _TeacherQrOtpManagementScreenState
     if (_selectedTimetableId == null) return;
 
     final confirmed = await _showConfirmDialog(
-      'End QR Session',
-      'Are you sure you want to end this QR session? Students will no longer be able to mark attendance.',
+      'End QR Session & Mark Absent',
+      'This will end the QR session and mark all enrolled students who haven\'t marked attendance as ABSENT. Continue?',
     );
 
     if (confirmed != true) return;
@@ -249,7 +249,14 @@ class _TeacherQrOtpManagementScreenState
     setState(() => _loading = true);
 
     try {
+      // First end the QR session
       await _service.endQrSession(_selectedTimetableId!);
+
+      // Then mark absent students
+      final absentResult = await _service.markAbsentStudents(
+        _selectedTimetableId!,
+      );
+
       setState(() {
         _qrCode = null;
         _qrImageBase64 = null;
@@ -257,8 +264,16 @@ class _TeacherQrOtpManagementScreenState
         _timeRemaining = 0;
         _loading = false;
       });
+
+      final absentData = absentResult.data;
+      final markedAbsent = absentData is Map
+          ? absentData['marked_absent'] ?? 0
+          : 0;
+
       if (mounted) {
-        _showSnackBar('QR session ended');
+        _showSnackBar(
+          'QR session ended. $markedAbsent students marked as absent.',
+        );
       }
     } catch (e) {
       setState(() {
@@ -272,8 +287,8 @@ class _TeacherQrOtpManagementScreenState
     if (_selectedTimetableId == null) return;
 
     final confirmed = await _showConfirmDialog(
-      'End OTP Session',
-      'Are you sure you want to end this OTP session? Students will no longer be able to mark attendance.',
+      'End OTP Session & Mark Absent',
+      'This will end the OTP session and mark all enrolled students who haven\'t marked attendance as ABSENT. Continue?',
     );
 
     if (confirmed != true) return;
@@ -281,15 +296,30 @@ class _TeacherQrOtpManagementScreenState
     setState(() => _loading = true);
 
     try {
+      // First end the OTP session
       await _service.endOtpSession(_selectedTimetableId!);
+
+      // Then mark absent students
+      final absentResult = await _service.markAbsentStudents(
+        _selectedTimetableId!,
+      );
+
       setState(() {
         _otpCode = null;
         _otpExpiresAt = null;
         _timeRemaining = 0;
         _loading = false;
       });
+
+      final absentData = absentResult.data;
+      final markedAbsent = absentData is Map
+          ? absentData['marked_absent'] ?? 0
+          : 0;
+
       if (mounted) {
-        _showSnackBar('OTP session ended');
+        _showSnackBar(
+          'OTP session ended. $markedAbsent students marked as absent.',
+        );
       }
     } catch (e) {
       setState(() {
@@ -505,6 +535,7 @@ class _TeacherQrOtpManagementScreenState
                                 vertical: 12,
                               ),
                             ),
+                            isExpanded: true,
                             items: _timetables.map<DropdownMenuItem<int>>((tt) {
                               final subject =
                                   tt['subject_name'] ??
@@ -512,14 +543,20 @@ class _TeacherQrOtpManagementScreenState
                                   'Unknown';
                               final day = tt['day_of_week'] ?? '';
                               final time =
-                                  tt['start_time']?.toString().substring(
-                                    0,
-                                    5,
-                                  ) ??
+                                  tt['start_time']
+                                      ?.toString()
+                                      .split('T')
+                                      .last
+                                      .split('.')
+                                      .first
+                                      .substring(0, 5) ??
                                   '';
                               return DropdownMenuItem<int>(
                                 value: tt['id'] as int?,
-                                child: Text('$subject - $day $time'),
+                                child: Text(
+                                  '$subject - $day $time',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               );
                             }).toList(),
                             onChanged: _onTimetableSelected,
@@ -688,7 +725,10 @@ class _TeacherQrOtpManagementScreenState
                           height: 220,
                         )
                       : QrImageView(
-                          data: _qrCode!,
+                          data: jsonEncode({
+                            "code": _qrCode,
+                            "timetable_id": _selectedTimetableId,
+                          }),
                           version: QrVersions.auto,
                           size: 220,
                         ),
@@ -796,60 +836,58 @@ class _TeacherQrOtpManagementScreenState
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          ModernCard(
-            padding: const EdgeInsets.all(32),
+          // OTP Code Display Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [colors.primary, colors.secondary],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.primary.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [colors.primary, colors.secondary],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    _otpCode!,
-                    style: const TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 12,
-                      color: Colors.white,
-                      fontFamily: 'monospace',
-                    ),
+                Text(
+                  _otpCode!,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 10,
+                    color: Colors.white,
+                    fontFamily: 'monospace',
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.secondaryContainer,
-                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.timer, size: 20, color: colors.secondary),
+                      const Icon(Icons.timer, size: 18, color: Colors.white),
                       const SizedBox(width: 8),
                       Text(
-                        'Expires in: ${_formatTime(_timeRemaining)}',
-                        style: TextStyle(
-                          fontSize: 18,
+                        'Expires in ${_formatTime(_timeRemaining)}',
+                        style: const TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: colors.secondary,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -858,35 +896,40 @@ class _TeacherQrOtpManagementScreenState
               ],
             ),
           ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 8),
+
+          // Instruction Text
+          Text(
+            'Share this code with your students',
+            style: TextStyle(fontSize: 14, color: colors.outline),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Action Buttons
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: FilledButton.tonalIcon(
                   onPressed: _loading ? null : _refreshOTP,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Refresh'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: FilledButton.icon(
                   onPressed: _loading ? null : _endOtpSession,
-                  icon: const Icon(Icons.stop_circle_outlined),
-                  label: const Text('End'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colors.error,
-                    side: BorderSide(color: colors.error),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                  icon: const Icon(Icons.stop_circle),
+                  label: const Text('End Session'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),

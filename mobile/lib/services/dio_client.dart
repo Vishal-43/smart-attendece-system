@@ -68,9 +68,14 @@ class _UnwrapInterceptor extends Interceptor {
     ResponseInterceptorHandler handler,
   ) {
     final data = response.data;
+    // Only unwrap successful responses (2xx status codes)
     if (data is Map &&
         data.containsKey('data') &&
-        data.containsKey('success')) {
+        data.containsKey('success') &&
+        data['success'] == true &&
+        response.statusCode != null &&
+        response.statusCode! >= 200 &&
+        response.statusCode! < 300) {
       response.data = data['data'];
     }
     handler.next(response);

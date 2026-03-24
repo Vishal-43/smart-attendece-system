@@ -1,26 +1,28 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts'
 
 const BAR_COLORS = {
-  Present: '#10B981',
-  Absent:  '#EF4444',
-  Late:    '#F59E0B',
+  Present: '#06b6d4',
+  Absent:  '#f43f5e',
+  Late:    '#f59e0b',
 }
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   const value = payload[0].value
+  const color = BAR_COLORS[label] || '#ffffff'
   return (
     <div style={{
-      background: '#ffffff',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
-      padding: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      background: 'rgba(20, 25, 40, 0.95)',
+      backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '12px',
+      padding: '14px 18px',
+      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3)',
     }}>
-      <div style={{ fontSize: '13px', fontWeight: 600, color: '#111827', marginBottom: 4 }}>
+      <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {label}
       </div>
-      <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
+      <div style={{ fontSize: '22px', fontWeight: 800, color: color }}>
         {value}
       </div>
     </div>
@@ -35,9 +37,9 @@ export default function StatsBar({ data }) {
         alignItems: 'center', 
         justifyContent: 'center', 
         height: 180,
-        color: '#6b7280', 
+        color: 'rgba(255, 255, 255, 0.3)', 
         fontSize: 14,
-        background: '#ffffff',
+        background: 'transparent',
       }}>
         No statistics available
       </div>
@@ -48,54 +50,54 @@ export default function StatsBar({ data }) {
   const dataWithTotal = data.map(d => ({ ...d, total }))
 
   return (
-    <div style={{ background: '#ffffff', width: '100%' }}>
+    <div style={{ width: '100%', padding: '8px 0' }}>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart 
           data={dataWithTotal} 
-          margin={{ top: 10, right: 20, left: -20, bottom: 0 }} 
-          barCategoryGap="16%"
+          margin={{ top: 10, right: 24, left: -24, bottom: 0 }} 
+          barCategoryGap="20%"
         >
           <defs>
             {Object.entries(BAR_COLORS).map(([key, color]) => (
               <linearGradient key={key} id={`barGradient${key}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={color} stopOpacity={1} />
-                <stop offset="100%" stopColor={color} stopOpacity={0.7} />
+                <stop offset="100%" stopColor={color} stopOpacity={0.6} />
               </linearGradient>
             ))}
           </defs>
 
           <CartesianGrid 
             strokeDasharray="0" 
-            stroke="#e5e7eb" 
+            stroke="rgba(255, 255, 255, 0.05)" 
             vertical={false} 
             horizontal={true}
           />
 
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
+            tick={{ fontSize: 12, fill: 'rgba(255, 255, 255, 0.5)', fontWeight: 600 }}
             axisLine={false}
             tickLine={false}
-            dy={8}
+            dy={10}
           />
 
           <YAxis
-            tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
+            tick={{ fontSize: 12, fill: 'rgba(255, 255, 255, 0.35)', fontWeight: 500 }}
             axisLine={false}
             tickLine={false}
             tickCount={4}
-            width={32}
+            width={36}
           />
 
           <Tooltip
-            cursor={{ fill: '#f3f4f6', radius: 4 }}
+            cursor={{ fill: 'rgba(255, 255, 255, 0.03)', radius: 6 }}
             content={<CustomTooltip />}
           />
 
           <Bar 
             dataKey="value" 
-            radius={[8, 8, 4, 4]} 
-            maxBarSize={72}
+            radius={[10, 10, 6, 6]} 
+            maxBarSize={80}
           >
             {dataWithTotal.map((entry, index) => (
               <Cell
@@ -108,9 +110,10 @@ export default function StatsBar({ data }) {
               position="top" 
               formatter={(value) => value > 0 ? value : ''}
               style={{ 
-                fontSize: 14, 
-                fontWeight: 700, 
-                fill: '#111827',
+                fontSize: 15, 
+                fontWeight: 800, 
+                fill: '#ffffff',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }} 
             />
           </Bar>

@@ -7,36 +7,46 @@ class ErrorHandler {
     if (errorStr.contains('timeout') || errorStr.contains('TimedOut')) {
       return 'Request timed out. Server is responding slowly.\nPlease check your network connection.';
     }
-    
-    if (errorStr.contains('Connection refused') || 
+
+    if (errorStr.contains('Connection refused') ||
         errorStr.contains('connection refused')) {
       return 'Cannot connect to server.\nMake sure the backend is running on port 8000.';
     }
-    
+
     if (errorStr.contains('SocketException')) {
       return 'Network connection failed.\nPlease check your internet connection.';
     }
-    
+
+    if (errorStr.contains('400')) {
+      if (errorStr.contains('detail')) {
+        final match = RegExp(r'detail["\s:]+([^"]+)').firstMatch(errorStr);
+        if (match != null) {
+          return match.group(1) ?? 'Bad request. Please check your input.';
+        }
+      }
+      return 'Bad request. Please check your input.';
+    }
+
     if (errorStr.contains('404')) {
       return 'Resource not found.\nIt may have been deleted.';
     }
-    
+
     if (errorStr.contains('401') || errorStr.contains('Unauthorized')) {
       return 'Authentication failed.\nPlease log in again.';
     }
-    
+
     if (errorStr.contains('403') || errorStr.contains('Forbidden')) {
       return 'You do not have permission to perform this action.';
     }
-    
+
     if (errorStr.contains('500') || errorStr.contains('500')) {
       return 'Server error. Please try again later.';
     }
-    
+
     if (errorStr.contains('Empty response')) {
       return 'No data available.\nPlease try again.';
     }
-    
+
     return 'Something went wrong. Please try again.';
   }
 

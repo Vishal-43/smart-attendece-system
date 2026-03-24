@@ -328,35 +328,38 @@ class _AccessPointManagementScreenState
                         ap['name'] ?? 'Unknown',
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'MAC: ${ap['mac_address'] ?? '—'}',
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 11,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (ap['ip_address'] != null)
+                      subtitle: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 200),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              'IP: ${ap['ip_address']}',
+                              'MAC: ${ap['mac_address'] ?? '—'}',
                               style: const TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 11,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                          Text(
-                            'Location: ${_getLocationName(ap['location_id'])}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: colors.outline,
+                            if (ap['ip_address'] != null)
+                              Text(
+                                'IP: ${ap['ip_address']}',
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            Text(
+                              'Location: ${_getLocationName(ap['location_id'])}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.outline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

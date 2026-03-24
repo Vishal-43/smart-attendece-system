@@ -25,7 +25,7 @@ class AttendanceRecord(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     division_id = Column(Integer, ForeignKey("divisions.id"), nullable=False)
     batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    location_id = Column(Integer, ForeignKey("locations.id"), nullable=True)
     marked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     status = Column(Enum(AttendanceStatus), nullable=False)
     device_info = Column(String, nullable=True)

@@ -27,6 +27,7 @@ class EnrollmentUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
     current_year: Optional[EnrollmentYear] = None
     current_semester: Optional[int] = None
+    division_id: Optional[int] = None
     status: Optional[EnrollmentStatus] = None
     has_kt: Optional[bool] = None
 

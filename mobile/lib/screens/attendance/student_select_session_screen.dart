@@ -53,12 +53,10 @@ class _StudentSelectSessionScreenState
     try {
       final response = await _service.getTodayTimetable();
       final data = response.data;
-      final listData = data is List
-          ? data
-          : (data?['data'] is List ? data['data'] : []);
+      final listData = data is List ? List.from(data) : [];
       if (mounted) {
         setState(() {
-          _timetables = List.from(listData);
+          _timetables = listData;
           _loading = false;
         });
       }

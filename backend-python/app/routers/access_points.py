@@ -57,17 +57,22 @@ def create_access_point(
     if not db.query(Location).filter(Location.id == ap_in.location_id).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Location not found",
+            detail="Location not found. Please create a location first.",
         )
-    if db.query(AccessPoint).filter(AccessPoint.mac_address == ap_in.mac_address).first():
+    
+    mac_upper = ap_in.mac_address.upper()
+    existing = db.query(AccessPoint).filter(
+        AccessPoint.mac_address == mac_upper
+    ).first()
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access point with this MAC address already exists",
+            detail="Access point with this MAC address already exists: ${existing.name}",
         )
     new_ap = AccessPoint(
         location_id=ap_in.location_id,
         name=ap_in.name,
-        mac_address=ap_in.mac_address,
+        mac_address=mac_upper,
         ip_address=ap_in.ip_address,
         is_active=ap_in.is_active,
     )

@@ -23,7 +23,11 @@ class ApiClient {
   }) async {
     try {
       final dio = await DioClient.getInstance();
-      final resp = await dio.get<T>(path, queryParameters: queryParameters, options: options);
+      final resp = await dio.get<T>(
+        path,
+        queryParameters: queryParameters,
+        options: options,
+      );
       return Success(_extractData<T>(resp));
     } on DioException catch (e) {
       return Failure(_mapDioError(e));
@@ -41,7 +45,12 @@ class ApiClient {
   }) async {
     try {
       final dio = await DioClient.getInstance();
-      final resp = await dio.post<T>(path, data: data, queryParameters: queryParameters, options: options);
+      final resp = await dio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
       return Success(_extractData<T>(resp));
     } on DioException catch (e) {
       return Failure(_mapDioError(e));
@@ -59,7 +68,12 @@ class ApiClient {
   }) async {
     try {
       final dio = await DioClient.getInstance();
-      final resp = await dio.put<T>(path, data: data, queryParameters: queryParameters, options: options);
+      final resp = await dio.put<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
       return Success(_extractData<T>(resp));
     } on DioException catch (e) {
       return Failure(_mapDioError(e));
@@ -125,8 +139,8 @@ class ApiClient {
     }
 
     final status = e.response?.statusCode;
-    final body   = e.response?.data;
-    final msg    = _extractMessage(body) ?? e.message ?? 'An error occurred';
+    final body = e.response?.data;
+    final msg = _extractMessage(body) ?? e.message ?? 'An error occurred';
 
     return switch (status) {
       400 => BadRequestException(message: msg, data: body),
@@ -134,14 +148,23 @@ class ApiClient {
       403 => ForbiddenException(message: msg),
       404 => NotFoundException(message: msg),
       409 => ConflictException(message: msg),
-      422 => ValidationException(message: msg, fieldErrors: _extractFieldErrors(body)),
-      _ when status != null && status >= 500 => ServerException(statusCode: status, message: msg),
+      422 => ValidationException(
+        message: msg,
+        fieldErrors: _extractFieldErrors(body),
+      ),
+      _ when status != null && status >= 500 => ServerException(
+        statusCode: status,
+        message: msg,
+      ),
       _ => ApiException(statusCode: status, message: msg),
     };
   }
 
   static String? _extractMessage(dynamic body) {
     if (body is Map<String, dynamic>) {
+      if (body['success'] == false && body['message'] != null) {
+        return body['message'] as String?;
+      }
       return body['message'] as String? ??
           body['detail'] as String? ??
           body['error'] as String?;
@@ -156,8 +179,8 @@ class ApiClient {
     final result = <String, List<String>>{};
     for (final item in detail) {
       if (item is Map<String, dynamic>) {
-        final loc  = (item['loc'] as List?)?.lastOrNull?.toString() ?? 'field';
-        final msg  = item['msg'] as String? ?? 'Invalid';
+        final loc = (item['loc'] as List?)?.lastOrNull?.toString() ?? 'field';
+        final msg = item['msg'] as String? ?? 'Invalid';
         result.putIfAbsent(loc, () => []).add(msg);
       }
     }

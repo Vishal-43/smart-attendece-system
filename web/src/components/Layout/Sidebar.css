@@ -1,4 +1,4 @@
-/* Sidebar.css - Enterprise Professional Navigation */
+/* Sidebar.css - Minimal Dark Sidebar (Linear/Vercel Inspired) */
 
 .sidebar {
   position: fixed;
@@ -9,12 +9,8 @@
   display: flex;
   flex-direction: column;
   z-index: 50;
-  background: var(--glass-bg);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border-right: 1.5px solid var(--glass-border);
-  overflow: hidden;
-  transition: width var(--transition-slow);
+  background: var(--bg-card);
+  border-right: var(--border);
 }
 
 .sidebar--collapsed {
@@ -23,20 +19,20 @@
 
 /* Logo */
 .sb-logo {
-  height: var(--header-h); /* 58px */
-  padding: 0 20px;
+  height: var(--header-h);
+  padding: 0 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  border-bottom: 1.5px solid var(--border);
+  border-bottom: var(--border);
 }
 
 .sb-logo-mark {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   background: var(--ink-primary);
-  border-radius: 7px;
+  border-radius: var(--r-md);
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -47,20 +43,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: opacity var(--transition-normal);
-}
-
-.sb-logo-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink-primary);
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  transition: opacity var(--transition-fast);
 }
 
 .sidebar--collapsed .sb-logo-text {
   opacity: 0;
   width: 0;
+}
+
+.sb-logo-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 /* Navigation */
@@ -71,7 +67,7 @@
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .sb-nav::-webkit-scrollbar {
@@ -87,6 +83,10 @@
   border-radius: 2px;
 }
 
+.sb-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
 /* Section */
 .sb-section {
   display: flex;
@@ -95,13 +95,13 @@
 }
 
 .sb-section-header {
-  padding: 0 10px 6px;
+  padding: 0 12px 8px;
 }
 
 .sb-section-title {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-hint);
 }
@@ -123,35 +123,45 @@
 .sb-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  height: 32px;
-  border-radius: 9px;
+  gap: 12px;
+  padding: 10px 12px;
+  height: 36px;
+  border-radius: var(--r-md);
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-secondary);
   text-decoration: none;
-  transition: all var(--transition-fast);
   cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
 }
 
 .sb-item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--bg-surface);
   color: var(--ink-primary);
 }
 
-[data-theme="dark"] .sb-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+.sb-item--active {
+  background: var(--bg-surface);
+  color: var(--ink-primary);
+  font-weight: 600;
 }
 
-.sb-item--active {
-  background: var(--ink-primary) !important;
-  color: var(--bg-card) !important;
+.sb-item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  background: var(--primary-500);
+  border-radius: 0 2px 2px 0;
 }
 
 .sb-item-icon {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -162,7 +172,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-fast);
 }
 
 .sidebar--collapsed .sb-item-label {
@@ -171,30 +181,28 @@
 }
 
 .sb-item-badge {
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   padding: 2px 6px;
-  border-radius: 10px;
-  background: var(--danger-bg);
-  color: var(--danger);
+  border-radius: var(--r-full);
+  background: var(--danger);
+  color: white;
   min-width: 18px;
   text-align: center;
 }
 
 .sidebar--collapsed .sb-item-badge {
-  opacity: 0;
-  position: absolute;
+  display: none;
 }
 
 /* Footer */
 .sb-footer {
-  padding: 16px;
-  border-top: 1.5px solid var(--border);
+  padding: 12px;
+  border-top: var(--border);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
-  background: transparent;
 }
 
 .sb-user {
@@ -207,12 +215,12 @@
 }
 
 .sb-user-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--ink-primary);
-  color: var(--bg-card);
-  font-size: 11px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--primary-500);
+  color: white;
+  font-size: 12px;
   font-weight: 600;
   display: grid;
   place-items: center;
@@ -223,7 +231,12 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-fast);
+}
+
+.sidebar--collapsed .sb-user-info {
+  opacity: 0;
+  width: 0;
 }
 
 .sb-user-name {
@@ -241,38 +254,24 @@
   text-transform: capitalize;
 }
 
-.sidebar--collapsed .sb-user-info {
-  opacity: 0;
-  width: 0;
-}
-
 .sb-profile-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
   display: grid;
   place-items: center;
-  color: var(--ink-secondary);
+  color: var(--ink-hint);
   text-decoration: none;
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
 
 .sb-profile-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--bg-surface);
   color: var(--ink-primary);
 }
 
-[data-theme="dark"] .sb-profile-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
 .sidebar--collapsed .sb-profile-btn {
-  display: none;
-}
-
-/* Collapse Button */
-.sb-collapse-btn {
   display: none;
 }
 

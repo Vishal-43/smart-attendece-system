@@ -8,13 +8,11 @@ const CustomTooltip = ({ active, payload, label }) => {
       border: '1px solid var(--border)',
       borderRadius: '8px',
       padding: '10px 14px',
-      fontSize: '12px',
-      color: 'var(--ink-primary)',
       boxShadow: 'var(--shadow-lg)',
     }}>
-      <div style={{ color: 'var(--ink-hint)', marginBottom: 4, fontSize: 11, fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-      <strong style={{ color: 'var(--info)' }}>{payload[0].value}</strong>
-      <span style={{ color: 'var(--ink-secondary)', marginLeft: 4 }}>present</span>
+      <div style={{ color: 'var(--ink-hint)', marginBottom: 4, fontSize: 11, fontWeight: 600 }}>{label}</div>
+      <strong style={{ color: 'var(--primary)', fontSize: 16, fontWeight: 700 }}>{payload[0].value}</strong>
+      <span style={{ color: 'var(--ink-secondary)', marginLeft: 4, fontSize: 12 }}>present</span>
     </div>
   )
 }
@@ -37,54 +35,54 @@ export default function TrendLine({ data }) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={160}>
-      <AreaChart data={data} margin={{ top: 16, right: 16, left: -20, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={180}>
+      <AreaChart data={data} margin={{ top: 20, right: 20, left: -24, bottom: 0 }}>
         <defs>
           <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--info)" stopOpacity={0.15} />
-            <stop offset="100%" stopColor="var(--info)" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
           </linearGradient>
         </defs>
 
-        <CartesianGrid stroke="transparent" vertical={false} horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
 
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 10, fill: 'var(--ink-hint)' }}
+          tick={{ fontSize: 11, fill: 'var(--ink-hint)', fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
-          dy={8}
+          dy={10}
         />
 
         <YAxis
-          tick={{ fontSize: 10, fill: 'var(--ink-hint)' }}
+          tick={{ fontSize: 11, fill: 'var(--ink-hint)', fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
           tickCount={4}
-          width={32}
+          width={36}
         />
 
         <Tooltip
           content={<CustomTooltip />}
-          cursor={{ stroke: 'var(--border-hover)', strokeWidth: 1, strokeDasharray: '4 4' }}
+          cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.5 }}
         />
 
         <Area
           type="monotone"
           dataKey="count"
-          stroke="var(--info)"
-          strokeWidth={2}
+          stroke="#6366f1"
+          strokeWidth={2.5}
           fill="url(#trendGradient)"
           dot={{
-            r: 3,
-            fill: 'var(--info)',
+            r: 4,
+            fill: '#6366f1',
             strokeWidth: 0,
           }}
           activeDot={{
-            r: 5,
-            fill: 'var(--info)',
+            r: 6,
+            fill: '#6366f1',
             stroke: 'var(--bg-card)',
-            strokeWidth: 2,
+            strokeWidth: 3,
           }}
         />
       </AreaChart>

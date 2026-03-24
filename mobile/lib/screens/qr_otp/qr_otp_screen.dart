@@ -1,13 +1,18 @@
 // qr_otp_screen.dart
-// Student-facing screen for entering a QR code or OTP to mark attendance.
+// Student-facing screen for marking attendance via QR code or OTP.
 // Accepts timetable_id as a navigation argument.
 // Navigator.pushNamed(context, '/qr-otp', arguments: {'timetableId': 42})
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/network/network_result.dart';
 import '../../features/attendance/attendance_repository.dart';
+import '../../services/location_service.dart';
+import '../../services/wifi_service.dart';
 
 class QrOtpScreen extends StatefulWidget {
   const QrOtpScreen({super.key});
@@ -20,24 +25,31 @@ class _QrOtpScreenState extends State<QrOtpScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final _repo = const AttendanceRepository();
+  final _locationService = LocationService();
+  final _wifiService = WifiService();
 
-  // ── Form controllers ──────────────────────────────────────────────────────
   final _qrController = TextEditingController();
   final _otpController = TextEditingController();
   final _qrFormKey = GlobalKey<FormState>();
   final _otpFormKey = GlobalKey<FormState>();
+
+  MobileScannerController? _scannerController;
+  bool _isScannerActive = false;
 
   int? _timetableId;
   bool _isSubmitting = false;
   String? _successMessage;
   String? _errorMessage;
 
+  Position? _currentPosition;
+  String? _currentBssid;
+  String? _currentSsid;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      // Clear messages when switching tabs
       if (_tabController.indexIsChanging) {
         setState(() {
           _successMessage = null;
@@ -61,10 +73,20 @@ class _QrOtpScreenState extends State<QrOtpScreen>
     _tabController.dispose();
     _qrController.dispose();
     _otpController.dispose();
+    _scannerController?.dispose();
     super.dispose();
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  Future<void> _collectLocationAndWifi() async {
+    try {
+      _currentPosition = await _locationService.getCurrentLocation();
+      final wifiInfo = await _wifiService.getCompleteWifiInfo();
+      _currentBssid = wifiInfo['bssid'];
+      _currentSsid = wifiInfo['ssid'];
+    } catch (e) {
+      debugPrint('Error collecting location/wifi: $e');
+    }
+  }
 
   Future<void> _submit(String method, String code) async {
     if (_timetableId == null) {
@@ -80,10 +102,16 @@ class _QrOtpScreenState extends State<QrOtpScreen>
       _errorMessage = null;
     });
 
+    await _collectLocationAndWifi();
+
     final result = await _repo.markAttendance(
       timetableId: _timetableId!,
       method: method,
       code: code.trim(),
+      latitude: _currentPosition?.latitude,
+      longitude: _currentPosition?.longitude,
+      bssid: _currentBssid,
+      deviceInfo: 'Mobile App - ${_currentSsid ?? "Unknown WiFi"}',
     );
 
     if (!mounted) return;
@@ -93,7 +121,6 @@ class _QrOtpScreenState extends State<QrOtpScreen>
         _successMessage = 'Attendance marked successfully!';
         _isSubmitting = false;
       });
-      // Clear the input
       if (method == 'qr') {
         _qrController.clear();
       } else {
@@ -107,7 +134,57 @@ class _QrOtpScreenState extends State<QrOtpScreen>
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  void _toggleScanner() {
+    if (_isScannerActive) {
+      _scannerController?.stop();
+      setState(() {
+        _isScannerActive = false;
+      });
+    } else {
+      _scannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.normal,
+        facing: CameraFacing.back,
+      );
+      setState(() {
+        _isScannerActive = true;
+      });
+    }
+  }
+
+  void _onBarcodeDetected(BarcodeCapture capture) {
+    if (capture.barcodes.isEmpty) return;
+
+    final barcode = capture.barcodes.first;
+    final rawValue = barcode.rawValue;
+
+    if (rawValue == null) return;
+
+    try {
+      final Map<String, dynamic> qrData = jsonDecode(rawValue);
+      final code = qrData['code'] as String?;
+      final timetableIdFromQr = qrData['timetable_id'] as int?;
+
+      if (code != null && code.isNotEmpty) {
+        _scannerController?.stop();
+        setState(() {
+          _isScannerActive = false;
+        });
+
+        if (_timetableId != null &&
+            timetableIdFromQr != null &&
+            _timetableId != timetableIdFromQr) {
+          setState(() => _errorMessage = 'QR code is for a different session');
+          return;
+        }
+
+        _qrController.text = code;
+        _submit('qr', code);
+      }
+    } catch (e) {
+      debugPrint('Error parsing QR code: $e');
+      setState(() => _errorMessage = 'Invalid QR code format');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,14 +206,11 @@ class _QrOtpScreenState extends State<QrOtpScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _CodePanel(
-            method: 'qr',
+          _QrPanel(
             controller: _qrController,
             formKey: _qrFormKey,
-            hintText: 'Paste or scan the QR code value',
-            label: 'QR Code',
-            icon: Icons.qr_code_2_rounded,
             isSubmitting: _isSubmitting,
+            isScannerActive: _isScannerActive,
             successMessage: _successMessage,
             errorMessage: _errorMessage,
             onSubmit: () {
@@ -144,6 +218,9 @@ class _QrOtpScreenState extends State<QrOtpScreen>
                 _submit('qr', _qrController.text);
               }
             },
+            onToggleScanner: _toggleScanner,
+            onBarcodeDetected: _onBarcodeDetected,
+            scannerController: _scannerController,
           ),
           _CodePanel(
             method: 'otp',
@@ -169,7 +246,185 @@ class _QrOtpScreenState extends State<QrOtpScreen>
   }
 }
 
-// ── Reusable panel ────────────────────────────────────────────────────────────
+class _QrPanel extends StatelessWidget {
+  final TextEditingController controller;
+  final GlobalKey<FormState> formKey;
+  final bool isSubmitting;
+  final bool isScannerActive;
+  final String? successMessage;
+  final String? errorMessage;
+  final VoidCallback onSubmit;
+  final VoidCallback onToggleScanner;
+  final Function(BarcodeCapture) onBarcodeDetected;
+  final MobileScannerController? scannerController;
+
+  const _QrPanel({
+    required this.controller,
+    required this.formKey,
+    required this.isSubmitting,
+    required this.isScannerActive,
+    this.successMessage,
+    this.errorMessage,
+    required this.onSubmit,
+    required this.onToggleScanner,
+    required this.onBarcodeDetected,
+    this.scannerController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isScannerActive && scannerController != null) {
+      return Stack(
+        children: [
+          MobileScanner(
+            controller: scannerController!,
+            onDetect: onBarcodeDetected,
+          ),
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: const Text(
+                'Point your camera at the QR code',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 32,
+            left: 16,
+            right: 16,
+            child: ElevatedButton.icon(
+              onPressed: onToggleScanner,
+              icon: const Icon(Icons.close),
+              label: const Text('Cancel Scanning'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+
+          Center(
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: AppDecorations.badge(AppColors.primary),
+              child: const Icon(
+                Icons.qr_code_2_rounded,
+                color: AppColors.primary,
+                size: AppIconSize.xxl,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          const Text(
+            'Mark Attendance via QR',
+            style: AppTextStyles.headline2,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.s3),
+          const Text(
+            'Scan the QR code displayed by your teacher',
+            style: AppTextStyles.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: onToggleScanner,
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text('Scan QR Code'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Text('OR', style: AppTextStyles.bodySmall),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+
+          Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.text,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyLarge.copyWith(fontFamily: 'monospace'),
+              decoration: AppInputDecoration.standard(
+                label: 'QR Code',
+                hint: 'Paste scanned code here…',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter the QR code value';
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          if (successMessage != null) _FeedbackBanner.success(successMessage!),
+          if (errorMessage != null) _FeedbackBanner.error(errorMessage!),
+          if (successMessage != null || errorMessage != null)
+            const SizedBox(height: AppSpacing.md),
+
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: isSubmitting
+                  ? null
+                  : () {
+                      if (formKey.currentState?.validate() ?? false) {
+                        onSubmit();
+                      }
+                    },
+              icon: isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.check_circle_outline_rounded),
+              label: Text(
+                isSubmitting ? 'Marking attendance…' : 'Mark Attendance',
+                style: AppTextStyles.button,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _CodePanel extends StatelessWidget {
   final String method;
@@ -193,11 +448,11 @@ class _CodePanel extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.isSubmitting,
-    required this.onSubmit,
     this.successMessage,
     this.errorMessage,
     this.isNumeric = false,
     this.maxLength,
+    required this.onSubmit,
   });
 
   @override
@@ -209,7 +464,6 @@ class _CodePanel extends StatelessWidget {
         children: [
           const SizedBox(height: AppSpacing.md),
 
-          // Icon hero
           Center(
             child: Container(
               width: 80,
@@ -237,7 +491,6 @@ class _CodePanel extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // Input form
           Form(
             key: formKey,
             child: TextFormField(
@@ -272,13 +525,11 @@ class _CodePanel extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Feedback banners
           if (successMessage != null) _FeedbackBanner.success(successMessage!),
           if (errorMessage != null) _FeedbackBanner.error(errorMessage!),
           if (successMessage != null || errorMessage != null)
             const SizedBox(height: AppSpacing.md),
 
-          // Submit button
           SizedBox(
             height: 52,
             child: ElevatedButton.icon(

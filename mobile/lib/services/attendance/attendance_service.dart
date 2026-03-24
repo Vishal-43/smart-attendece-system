@@ -23,15 +23,43 @@ class AttendanceService {
     return await dio.post('/attendance/mark', data: data);
   }
 
-  Future<Response> getAttendanceRecords(
+  Future<Map<String, dynamic>> getAttendanceRecords(
     int userId, {
     int page = 1,
     int limit = 20,
   }) async {
     final dio = await DioClient.getInstance();
-    return await dio.get(
+    final response = await dio.get(
       '/attendance/history/$userId',
       queryParameters: {'page': page, 'limit': limit},
     );
+
+    // Handle the response - might be wrapped or unwrapped
+    dynamic data = response.data;
+
+    if (data is Map<String, dynamic>) {
+      // If data is already unwrapped by interceptor
+      if (!data.containsKey('success')) {
+        return data;
+      }
+      // If wrapped, return the data portion
+      return data['data'] as Map<String, dynamic>? ?? data;
+    }
+
+    return {};
+  }
+
+  Future<Map<String, dynamic>> getTodayAttendance() async {
+    final dio = await DioClient.getInstance();
+    final response = await dio.get('/attendance/today');
+
+    dynamic data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (!data.containsKey('success')) {
+        return data;
+      }
+      return data['data'] as Map<String, dynamic>? ?? data;
+    }
+    return {};
   }
 }

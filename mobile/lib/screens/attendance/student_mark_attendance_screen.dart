@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../services/location_service.dart';
@@ -95,8 +96,8 @@ class _StudentMarkAttendanceScreenState
 
       if (mounted) {
         setState(() {
-          final qrData = qrResponse.data?['data'];
-          final otpData = otpResponse.data?['data'];
+          final qrData = qrResponse.data as Map<String, dynamic>?;
+          final otpData = otpResponse.data as Map<String, dynamic>?;
 
           _activeQr = qrData?['has_active'] == true
               ? {'has_active': true, 'expires_in': qrData?['expires_in'] ?? 0}
@@ -139,6 +140,62 @@ class _StudentMarkAttendanceScreenState
     });
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 64,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Attendance Marked!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your attendance has been successfully recorded.',
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Done'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _initializeServices() async {
     try {
       _position = await _locationService.getCurrentLocation();
@@ -152,6 +209,15 @@ class _StudentMarkAttendanceScreenState
           'SSID: ${wifiInfo['ssid'] ?? 'Unknown'}, BSSID: ${wifiInfo['bssid'] ?? 'Unknown'}';
     } catch (e) {
       debugPrint('WiFi error: $e');
+    }
+  }
+
+  Future<String?> _getBssid() async {
+    try {
+      return await _wifiService.getWifiBSSID();
+    } catch (e) {
+      debugPrint('Error getting BSSID: $e');
+      return null;
     }
   }
 
@@ -172,6 +238,7 @@ class _StudentMarkAttendanceScreenState
 
     try {
       _position ??= await _locationService.getCurrentLocation();
+      final bssid = await _getBssid();
 
       final result = await _repo.markAttendance(
         timetableId: widget.timetableId,
@@ -179,6 +246,7 @@ class _StudentMarkAttendanceScreenState
         code: code.trim(),
         latitude: _position?.latitude,
         longitude: _position?.longitude,
+        bssid: bssid,
         deviceInfo: _wifiInfo,
       );
 
@@ -194,14 +262,17 @@ class _StudentMarkAttendanceScreenState
           _otpController.clear();
         }
 
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        });
+        _showSuccessDialog();
       } else if (result is Failure) {
-        final errorMsg = result.errorOrNull?.message ?? 'Unknown error';
-        String message = errorMsg;
+        final error = result.errorOrNull;
+        String message = error?.message ?? 'Unknown error';
+
+        if (error != null && error.data != null && error.data is Map) {
+          final data = error.data as Map;
+          if (data['message'] != null) {
+            message = data['message'].toString();
+          }
+        }
 
         if (message.toLowerCase().contains('invalid code')) {
           message =
@@ -250,12 +321,8 @@ class _StudentMarkAttendanceScreenState
 
       if (scannedCode.startsWith('{')) {
         try {
-          final codeMatch = RegExp(
-            r'"code"\s*:\s*"([^"]+)"',
-          ).firstMatch(scannedCode);
-          if (codeMatch != null) {
-            codeToSubmit = codeMatch.group(1) ?? scannedCode;
-          }
+          final qrData = jsonDecode(scannedCode) as Map<String, dynamic>;
+          codeToSubmit = qrData['code']?.toString() ?? scannedCode;
         } catch (e) {
           debugPrint('Failed to parse QR JSON: $e');
         }
@@ -434,54 +501,6 @@ class _StudentMarkAttendanceScreenState
     );
   }
 
-  Widget _buildOTPDisplay() {
-    if (_activeOtp == null || _otpExpiresIn <= 0)
-      return const SizedBox.shrink();
-    final colors = Theme.of(context).colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colors.secondary, colors.secondary.withValues(alpha: 0.8)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: colors.secondary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            'Your OTP Code',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _activeOtp!['code'] ?? '------',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 8,
-              fontFamily: 'monospace',
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Expires in ${_formatTime(_otpExpiresIn)}',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -502,6 +521,54 @@ class _StudentMarkAttendanceScreenState
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: _buildSessionStatus(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: Colors.white,
+                unselectedLabelColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                tabs: const [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.qr_code_scanner, size: 20),
+                        SizedBox(width: 8),
+                        Text('QR Code'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.password, size: 20),
+                        SizedBox(width: 8),
+                        Text('OTP Code'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           Expanded(
             child: TabBarView(
@@ -680,171 +747,238 @@ class _StudentMarkAttendanceScreenState
     final colors = Theme.of(context).colorScheme;
     final hasOtpSession = _activeOtp != null && _otpExpiresIn > 0;
 
-    if (!hasOtpSession && !_loadingSession) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.password, size: 64, color: colors.secondary),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'No OTP Session Active',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your teacher needs to start an OTP attendance session first',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Form(
         key: _otpFormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildOTPDisplay(),
-            const Text(
-              'Enter 6-digit OTP',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            // Session Status Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: hasOtpSession
+                    ? colors.secondaryContainer
+                    : colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: hasOtpSession
+                      ? colors.secondary
+                      : colors.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    hasOtpSession ? Icons.timer : Icons.timer_off,
+                    color: hasOtpSession ? colors.secondary : colors.outline,
+                    size: 40,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    hasOtpSession ? 'OTP Session Active' : 'No OTP Session',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: hasOtpSession
+                          ? colors.onSecondaryContainer
+                          : colors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hasOtpSession
+                        ? 'Expires in ${_formatTime(_otpExpiresIn)}'
+                        : 'Ask your teacher to start OTP attendance',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: hasOtpSession
+                          ? colors.onSecondaryContainer.withValues(alpha: 0.8)
+                          : colors.outline,
+                    ),
+                  ),
+                ],
+              ),
             ),
+
             const SizedBox(height: 24),
+
+            // OTP Input
+            Text(
+              'Enter 6-digit OTP',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _otpController,
-              decoration: const InputDecoration(
+              enabled: hasOtpSession && !_isSubmitting,
+              decoration: InputDecoration(
                 labelText: 'OTP Code',
-                hintText: '123456',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.password),
+                hintText: hasOtpSession
+                    ? 'Enter code shown by teacher'
+                    : 'No active session',
+                prefixIcon: const Icon(Icons.password),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: !hasOtpSession,
+                fillColor: colors.surfaceContainerHighest,
               ),
               keyboardType: TextInputType.number,
               maxLength: 6,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 8,
+              ),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Please enter OTP';
-                if (value.length != 6) return 'OTP must be 6 digits';
+                if (value == null || value.isEmpty) {
+                  return 'Please enter OTP';
+                }
+                if (value.length != 6) {
+                  return 'OTP must be 6 digits';
+                }
                 return null;
               },
             ),
-            const SizedBox(height: 24),
-            if (_position != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 16, color: colors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Location: ${0}...'.replaceAll(
-                        '${0}',
-                        '${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
-                      ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (_wifiInfo != null) ...[
-              Row(
-                children: [
-                  Icon(Icons.wifi, size: 16, color: colors.secondary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _wifiInfo!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submitOTP,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Mark Attendance',
-                      style: TextStyle(fontSize: 16),
-                    ),
-            ),
-            if (_successMessage != null) ...[
-              const SizedBox(height: 16),
+
+            const SizedBox(height: 16),
+
+            // Location Info
+            if (_position != null)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colors.primaryContainer,
-                  border: Border.all(color: colors.primary),
-                  borderRadius: BorderRadius.circular(8),
+                  color: colors.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: colors.primary),
-                    const SizedBox(width: 12),
+                    Icon(Icons.location_on, size: 20, color: colors.primary),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _successMessage!,
-                        style: TextStyle(color: colors.primary),
+                        'Location: ${_position!.latitude.toStringAsFixed(4)}, ${_position!.longitude.toStringAsFixed(4)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            if (_wifiInfo != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.secondaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi, size: 20, color: colors.secondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _wifiInfo!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
+
+            // Error Message
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colors.errorContainer,
-                  border: Border.all(color: colors.error),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error, color: colors.error),
+                    Icon(Icons.error_outline, color: colors.error, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(color: colors.error),
+                        style: TextStyle(
+                          color: colors.onErrorContainer,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
+
+            // Success Message
+            if (_successMessage != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: colors.primary, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _successMessage!,
+                        style: TextStyle(
+                          color: colors.onPrimaryContainer,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+
+            // Submit Button
+            FilledButton.icon(
+              onPressed: (hasOtpSession && !_isSubmitting) ? _submitOTP : null,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check),
+              label: Text(_isSubmitting ? 'Submitting...' : 'Mark Attendance'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ],
         ),
       ),
