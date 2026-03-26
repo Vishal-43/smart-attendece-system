@@ -1,4 +1,5 @@
 import apiClient from './client'
+import API_CONFIG from '../config/api.js'
 
 // Authentication Endpoints
 export const authAPI = {
@@ -155,8 +156,7 @@ export const subjectsAPI = {
 
 export const realtimeAPI = {
   attendanceSocketUrl: (timetableId) => {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-    const wsBase = apiBase.replace(/^http/, 'ws')
+    const wsBase = API_CONFIG.WS_BASE_URL
     return `${wsBase}/ws/attendance/${timetableId}`
   },
 }

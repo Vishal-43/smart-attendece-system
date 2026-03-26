@@ -1,0 +1,51 @@
+app = "smartattendance-api"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  PYTHONUNBUFFERED = "1"
+
+[deploy]
+  release_command = "alembic upgrade head"
+
+[env.metadata]
+  # These are set during deployment
+  # DATABASE_URL = "postgres://..."
+  # JWT_SECRET = "..."
+  # ALLOWED_ORIGINS = "https://your-frontend-app.fly.dev"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
+
+[[statics]]
+  guest_path = "/app"
+  url_path = "/"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

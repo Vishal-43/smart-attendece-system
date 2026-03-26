@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 
 class DioClient {
   static Dio? _dio;
@@ -9,17 +9,14 @@ class DioClient {
   );
   static const _tokenKey = 'jwt_token';
 
-  static const String _realDeviceUrl = 'http://192.168.0.101:8000/api/v1';
-  static const String _localhostUrl = 'http://localhost:8000/api/v1';
-
   static Future<Dio> getInstance() async {
-    final baseUrl = _getBaseUrl();
+    final baseUrl = ApiConfig.baseUrl;
 
     _dio ??= Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: ApiConfig.connectTimeout,
+        receiveTimeout: ApiConfig.receiveTimeout,
       ),
     );
 
@@ -39,23 +36,6 @@ class DioClient {
     return _dio!;
   }
 
-  static String _getBaseUrl() {
-    const String envUrl = String.fromEnvironment('API_BASE_URL');
-    if (envUrl.isNotEmpty) {
-      return envUrl;
-    }
-
-    if (kIsWeb) {
-      return _localhostUrl;
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return _realDeviceUrl;
-    }
-
-    return _localhostUrl;
-  }
-
   static void reset() {
     _dio = null;
   }
@@ -68,7 +48,6 @@ class _UnwrapInterceptor extends Interceptor {
     ResponseInterceptorHandler handler,
   ) {
     final data = response.data;
-    // Only unwrap successful responses (2xx status codes)
     if (data is Map &&
         data.containsKey('data') &&
         data.containsKey('success') &&

@@ -1,0 +1,115 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: smartattendance_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smartattendance_user
+      POSTGRES_PASSWORD: smartattendance_pass
+      POSTGRES_DB: smartattendance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartattendance_user -d smartattendance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: smartattendance_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-1:
+    build:
+      context: ./backend-python
+      dockerfile: Dockerfile
+    container_name: smartattendance_backend_1
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://smartattendance_user:smartattendance_pass@db:5432/smartattendance
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-demo-secret-key-change-in-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:5173,http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  backend-2:
+    build:
+      context: ./backend-python
+      dockerfile: Dockerfile
+    container_name: smartattendance_backend_2
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://smartattendance_user:smartattendance_pass@db:5432/smartattendance
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-demo-secret-key-change-in-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:5173,http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: smartattendance_web
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${API_BASE_URL:-http://localhost}
+    depends_on:
+      - backend-1
+      - backend-2
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: smartattendance_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx.demo.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend-1
+      - backend-2
+      - web
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
