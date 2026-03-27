@@ -60,4 +60,3 @@ docker-compose.override.yml
 .cache/
 cred.txt
 
-*.json
