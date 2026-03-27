@@ -5,7 +5,7 @@ import math
 from app.core.dependencies import get_db, require_admin
 from app.core.response import success_response
 from app.schemas.locations import LocationCreate, LocationOut, LocationUpdate
-from app.database.locations import Location
+from app.database.locations import Location, RoomType
 
 router = APIRouter(prefix="/api/v1/locations", tags=["locations"])
 
@@ -49,6 +49,14 @@ def create_location(location_in: LocationCreate, db: Session = Depends(get_db), 
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Location with this name already exists",
         )
+    
+    room_type_enum = None
+    if location_in.room_type:
+        try:
+            room_type_enum = RoomType(location_in.room_type)
+        except ValueError:
+            pass
+    
     new_location = Location(
         name=location_in.name,
         latitude=location_in.latitude,
@@ -56,7 +64,7 @@ def create_location(location_in: LocationCreate, db: Session = Depends(get_db), 
         radius=location_in.radius,
         room_no=location_in.address or location_in.room_no,
         floor=location_in.floor,
-        room_type=location_in.room_type,
+        room_type=room_type_enum,
         capacity=location_in.capacity,
     )
     db.add(new_location)
@@ -78,6 +86,12 @@ def update_location(
     address = update_data.pop("address", None)
     if address is not None:
         update_data["room_no"] = address
+    
+    if "room_type" in update_data and update_data["room_type"]:
+        try:
+            update_data["room_type"] = RoomType(update_data["room_type"])
+        except ValueError:
+            del update_data["room_type"]
 
     for key, value in update_data.items():
         setattr(db_location, key, value)

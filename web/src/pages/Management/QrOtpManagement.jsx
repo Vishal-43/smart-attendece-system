@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { QrCode, KeyRound, RefreshCw, XCircle, Clock, CheckCircle, Users } from 'lucide-react'
 import { qrAPI, otpAPI, timetablesAPI } from '../../api/endpoints'
 import { Card, Loading } from '../../components/Common'
+import API_CONFIG from '../../config/api.js'
 import './QrOtpManagement.css'
 
 export default function QrOtpManagement() {
@@ -42,7 +43,8 @@ export default function QrOtpManagement() {
 
   useEffect(() => {
     if (!selectedTimetable) return
-    const ws = new WebSocket(`wss://api.example.com/ws/attendance/${selectedTimetable}`)
+    const wsUrl = `${API_CONFIG.WS_BASE_URL}/ws/attendance/${selectedTimetable}`
+    const ws = new WebSocket(wsUrl)
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data)

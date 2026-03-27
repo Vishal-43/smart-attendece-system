@@ -11,7 +11,7 @@
     <uses-feature android:name="android.hardware.location" android:required="false"/>
     
     <application
-        android:label="dart"
+        android:label="Smart Attendance"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
