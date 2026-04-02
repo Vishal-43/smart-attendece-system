@@ -160,103 +160,54 @@ async def mark_attendance(
     if timetable.location_id:
         location = db.query(Location).filter(Location.id == timetable.location_id).first()
 
-    # 5. Location Verification (BOTH GPS + WiFi required if location has any verification configured)
+    # Determine what verifications are required
     location_requires_gps = (
-        location and 
+        location is not None and 
         location.latitude is not None and 
         location.longitude is not None and 
         location.radius is not None and
         location.radius > 0
     )
     
-    location_requires_wifi = (
-        location and 
-        bssid
-    )
-
-    gps_passed = False
-    wifi_passed = False
-    errors = []
+    registered_aps = []
+    if location is not None:
+        registered_aps = (
+            db.query(AccessPoint)
+            .filter(
+                AccessPoint.location_id == location.id,
+                AccessPoint.is_active == True,
+            )
+            .all()
+        )
+    
+    location_requires_wifi = len(registered_aps) > 0 and bssid is not None
 
     # GPS Verification
     if location_requires_gps:
         if user_lat is None or user_lon is None:
-            errors.append("GPS coordinates required. Please enable location services.")
-        else:
-            distance = _haversine_distance(user_lat, user_lon, location.latitude, location.longitude)
-            if distance > location.radius:
-                errors.append(f"You are {distance:.0f}m away from the session location (max {location.radius}m).")
-            else:
-                gps_passed = True
+            raise ForbiddenError("GPS coordinates required. Please enable location services.")
+        
+        distance = _haversine_distance(user_lat, user_lon, location.latitude, location.longitude)
+        if distance > location.radius:
+            raise ForbiddenError(f"You are {distance:.0f}m away from the session location (max {location.radius}m).")
 
     # WiFi BSSID Verification
     if location_requires_wifi:
-        registered_aps = (
-            db.query(AccessPoint)
-            .filter(
-                AccessPoint.location_id == location.id,
-                AccessPoint.is_active == True,
-            )
-            .all()
-        )
+        # Normalize BSSID: remove colons, convert to uppercase
+        def normalize_bssid(b: str) -> str:
+            return b.replace(':', '').replace('-', '').upper().strip()
         
-        if registered_aps:
-            bssid_upper = bssid.upper()
-            bssid_matched = any(
-                ap.mac_address and ap.mac_address.upper() == bssid_upper 
-                for ap in registered_aps
-            )
-            
-            if not bssid_matched:
-                errors.append("You are not connected to the authorized WiFi network for this location.")
-            else:
-                wifi_passed = True
-        else:
-            # No access points registered, skip WiFi check
-            wifi_passed = True
-
-    # Check if location has verification requirements
-    location_has_gps_config = location_requires_gps
-    location_has_wifi_config = (
-        location and 
-        db.query(AccessPoint)
-        .filter(
-            AccessPoint.location_id == location.id,
-            AccessPoint.is_active == True,
-        )
-        .count() > 0
-    )
-
-    # Fail if GPS is required but not passed
-    if location_has_gps_config and not gps_passed:
-        raise ForbiddenError(errors[0] if errors else "GPS verification failed.")
-
-    # Fail if WiFi is required but not passed
-    if location_has_wifi_config and not wifi_passed:
-        raise ForbiddenError("WiFi verification failed. Please connect to campus WiFi.")
-
-    # 6. Create attendance record
-        registered_aps = (
-            db.query(AccessPoint)
-            .filter(
-                AccessPoint.location_id == location.id,
-                AccessPoint.is_active == True,
-            )
-            .all()
-        )
+        normalized_bssid = normalize_bssid(bssid) if bssid else ""
+        registered_bssids = [normalize_bssid(ap.mac_address) for ap in registered_aps if ap.mac_address]
         
-        if registered_aps:
-            bssid_upper = bssid.upper()
-            bssid_matched = any(
-                ap.mac_address and ap.mac_address.upper() == bssid_upper 
-                for ap in registered_aps
+        bssid_matched = normalized_bssid in registered_bssids
+        
+        if not bssid_matched:
+            raise ForbiddenError(
+                f"You are not connected to the authorized WiFi network. "
+                f"Registered networks: {', '.join([ap.mac_address for ap in registered_aps])}. "
+                f"Detected: {bssid or 'none'}."
             )
-            
-            if not bssid_matched:
-                raise ForbiddenError(
-                    "You are not connected to the authorized WiFi network for this location. "
-                    f"Please connect to the campus WiFi (registered APs: {len(registered_aps)})."
-                )
 
     # 6. Create attendance record
     record = AttendanceRecord(
