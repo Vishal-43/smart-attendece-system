@@ -180,7 +180,7 @@ async def mark_attendance(
             .all()
         )
     
-    location_requires_wifi = len(registered_aps) > 0 and bssid is not None
+    location_has_wifi = len(registered_aps) > 0
 
     # GPS Verification
     if location_requires_gps:
@@ -191,8 +191,16 @@ async def mark_attendance(
         if distance > location.radius:
             raise ForbiddenError(f"You are {distance:.0f}m away from the session location (max {location.radius}m).")
 
-    # WiFi BSSID Verification
-    if location_requires_wifi:
+    # WiFi BSSID Verification - MUST pass if location has registered APs
+    if location_has_wifi:
+        if not bssid:
+            raise ForbiddenError("WiFi connection required. Please connect to the authorized network and try again.")
+        
+        # Check for fake MAC address (Android returns this when it can't get real BSSID)
+        fake_mac = "020000000000"
+        normalized_bssid_check = bssid.replace(':', '').replace('-', '').upper().strip()
+        if normalized_bssid_check == fake_mac:
+            raise ForbiddenError("Unable to detect WiFi network. Please ensure you are connected to the authorized WiFi network.")
         # Normalize BSSID: remove colons, convert to uppercase
         def normalize_bssid(b: str) -> str:
             if not b:
