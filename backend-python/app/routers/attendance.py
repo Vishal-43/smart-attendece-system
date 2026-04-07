@@ -195,10 +195,18 @@ async def mark_attendance(
     if location_requires_wifi:
         # Normalize BSSID: remove colons, convert to uppercase
         def normalize_bssid(b: str) -> str:
+            if not b:
+                return ""
             return b.replace(':', '').replace('-', '').upper().strip()
         
         normalized_bssid = normalize_bssid(bssid) if bssid else ""
         registered_bssids = [normalize_bssid(ap.mac_address) for ap in registered_aps if ap.mac_address]
+        
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"[BSSID DEBUG] bssid from phone: '{bssid}' -> normalized: '{normalized_bssid}'")
+        logger.warning(f"[BSSID DEBUG] registered BSSIDs: {registered_bssids}")
         
         bssid_matched = normalized_bssid in registered_bssids
         

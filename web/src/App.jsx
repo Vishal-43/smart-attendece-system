@@ -29,6 +29,7 @@ const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'))
 const ProfilePage = lazy(() => import('./pages/Settings/ProfilePage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const GlassUIShowcase = lazy(() => import('./pages/GlassUIShowcase'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 
 function PageLoader() {
   return <Loading fullScreen />
@@ -55,6 +56,7 @@ export default function App() {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/showcase" element={<GlassUIShowcase />} />
 
             <Route path="/auth/login" element={<LoginPage />} />
@@ -63,7 +65,7 @@ export default function App() {
             <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
             <Route element={<ProtectedLayout />}>
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/home" element={<DashboardPage />} />
               
               <Route path="/management/users" element={<UsersPage />} />
               <Route path="/management/divisions" element={<DivisionsPage />} />
