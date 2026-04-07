@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Index
 from sqlalchemy.orm import relationship
 
 from app.database.database import Base
@@ -37,3 +37,8 @@ class AttendanceRecord(Base):
     timetable = relationship("Timetable", back_populates="attendance_records")
     student = relationship("User", foreign_keys=[student_id])
     teacher = relationship("User", foreign_keys=[teacher_id])
+    
+    # Indexes for efficient querying and duplicate prevention
+    __table_args__ = (
+        Index('idx_timetable_student_date', 'timetable_id', 'student_id', 'marked_at'),
+    )

@@ -1,9 +1,11 @@
 from datetime import datetime, date, timezone
 from typing import Optional
 import math
+import logging
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import IntegrityError
 
 from app.core.dependencies import get_db, get_current_user
 from app.core.exceptions import NotFoundError, ConflictError, ForbiddenError, ValidationError
@@ -18,6 +20,18 @@ from app.database.student_enrollments import StudentEnrollment, EnrollmentStatus
 from app.database.user import User
 from app.database.subjects import Subject
 from app.schemas.attendance_records import MarkAttendanceRequest
+from app.security.permissions import UserRole, require_role
+from app.services.audit_service import log_action
+from app.services.attendance_ws import attendance_ws_manager
+from app.services.notification_service import create_notification
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/v1/attendance", tags=["Attendance Records"])
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _serialize_record_with_student(r: AttendanceRecord) -> dict:
     """Serialize record with student info for teacher/admin view."""
@@ -31,17 +45,7 @@ def _serialize_record_with_student(r: AttendanceRecord) -> dict:
             "email": r.student.email,
         }
     return result
-from app.security.permissions import UserRole, require_role
-from app.services.audit_service import log_action
-from app.services.attendance_ws import attendance_ws_manager
-from app.services.notification_service import create_notification
 
-router = APIRouter(prefix="/api/v1/attendance", tags=["Attendance Records"])
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Return distance in metres between two WGS-84 coordinates."""
@@ -97,6 +101,16 @@ async def mark_attendance(
     current_user: User = Depends(require_role(UserRole.STUDENT)),
     db: Session = Depends(get_db),
 ):
+    """
+    Mark attendance with multi-factor validation:
+    1. Code validation (QR/OTP)
+    2. Enrollment validation
+    3. Duplicate prevention (with row locking)
+    4. Geofence validation
+    5. WiFi BSSID validation
+    
+    IMPORTANT: All validations must complete successfully BEFORE creating any record.
+    """
     method = body.method
     code = body.code
     user_lat = body.latitude
@@ -105,9 +119,13 @@ async def mark_attendance(
     device_info = body.device_info
 
     device_info_str = device_info or f"method={method}"
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # =========================================================================
+    # PHASE 1: READ-ONLY VALIDATIONS (no database writes)
+    # =========================================================================
 
     # 1. Validate code and get timetable_id FROM the code (not from request body)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if method == "qr":
         entry = db.query(QRCode).filter(QRCode.code == code).first()
     else:
@@ -141,21 +159,7 @@ async def mark_attendance(
     if not enrollment:
         raise ForbiddenError("You are not enrolled in this division")
 
-    # 4. No duplicate attendance for today's session
-    today_start = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
-    duplicate = (
-        db.query(AttendanceRecord)
-        .filter(
-            AttendanceRecord.timetable_id == actual_timetable_id,
-            AttendanceRecord.student_id == current_user.id,
-            AttendanceRecord.marked_at >= today_start,
-        )
-        .first()
-    )
-    if duplicate:
-        raise ConflictError("Attendance already marked for this session today")
-
-    # 5. Geofencing (if location has coordinates and student provided coordinates)
+    # 4. Location & GPS/WiFi requirements preprocessing
     location: Optional[Location] = None
     if timetable.location_id:
         location = db.query(Location).filter(Location.id == timetable.location_id).first()
@@ -182,26 +186,34 @@ async def mark_attendance(
     
     location_has_wifi = len(registered_aps) > 0
 
-    # GPS Verification
+    # 5. GPS Verification
     if location_requires_gps:
         if user_lat is None or user_lon is None:
             raise ForbiddenError("GPS coordinates required. Please enable location services.")
         
         distance = _haversine_distance(user_lat, user_lon, location.latitude, location.longitude)
         if distance > location.radius:
-            raise ForbiddenError(f"You are {distance:.0f}m away from the session location (max {location.radius}m).")
+            raise ForbiddenError(
+                f"You are {distance:.0f}m away from the session location (maximum {location.radius}m allowed). "
+                f"Please move closer to the classroom."
+            )
 
-    # WiFi BSSID Verification - MUST pass if location has registered APs
+    # 6. WiFi BSSID Verification - MUST pass if location has registered APs
     if location_has_wifi:
         if not bssid:
-            raise ForbiddenError("WiFi connection required. Please connect to the authorized network and try again.")
+            raise ForbiddenError(
+                "WiFi connection required. Please connect to the authorized network and try again."
+            )
         
         # Check for fake MAC address (Android returns this when it can't get real BSSID)
         fake_mac = "020000000000"
         normalized_bssid_check = bssid.replace(':', '').replace('-', '').upper().strip()
         if normalized_bssid_check == fake_mac:
-            raise ForbiddenError("Unable to detect WiFi network. Please ensure you are connected to the authorized WiFi network.")
-        # Normalize BSSID: remove colons, convert to uppercase
+            raise ForbiddenError(
+                "Unable to detect WiFi network. Please ensure you are connected to the authorized WiFi network."
+            )
+        
+        # Normalize BSSID: remove colons/dashes, convert to uppercase
         def normalize_bssid(b: str) -> str:
             if not b:
                 return ""
@@ -211,45 +223,89 @@ async def mark_attendance(
         registered_bssids = [normalize_bssid(ap.mac_address) for ap in registered_aps if ap.mac_address]
         
         # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning(f"[BSSID DEBUG] bssid from phone: '{bssid}' -> normalized: '{normalized_bssid}'")
-        logger.warning(f"[BSSID DEBUG] registered BSSIDs: {registered_bssids}")
+        logger.warning(f"[WIFI DEBUG] Phone BSSID: '{bssid}' → normalized: '{normalized_bssid}'")
+        logger.warning(f"[WIFI DEBUG] Registered BSSIDs: {registered_bssids}")
         
         bssid_matched = normalized_bssid in registered_bssids
         
         if not bssid_matched:
             raise ForbiddenError(
                 f"You are not connected to the authorized WiFi network. "
-                f"Registered networks: {', '.join([ap.mac_address for ap in registered_aps])}. "
-                f"Detected: {bssid or 'none'}."
+                f"Detected: {bssid or 'none'}. "
+                f"Required: {', '.join([ap.mac_address for ap in registered_aps]) or 'any registered network'}."
             )
 
-    # 6. Create attendance record
-    record = AttendanceRecord(
-        timetable_id=actual_timetable_id,
-        student_id=current_user.id,
-        enrollment_id=enrollment.id,
-        teacher_id=timetable.teacher_id,
-        division_id=timetable.division_id,
-        batch_id=timetable.batch_id,
-        location_id=timetable.location_id,
-        marked_at=now,
-        status=AttendanceStatus.PRESENT,
-        device_info=device_info_str,
+    # =========================================================================
+    # PHASE 2: DUPLICATE CHECK WITH ROW LOCKING (pessimistic lock)
+    # =========================================================================
+
+    today_start = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Use row-level lock to prevent race conditions
+    # This ensures only ONE request can create attendance for this student+timetable combo
+    duplicate = (
+        db.query(AttendanceRecord)
+        .filter(
+            AttendanceRecord.timetable_id == actual_timetable_id,
+            AttendanceRecord.student_id == current_user.id,
+            AttendanceRecord.marked_at >= today_start,
+        )
+        .with_for_update()  # Pessimistic lock: wait for other transactions
+        .first()
     )
-    db.add(record)
-    entry.used_count = (entry.used_count or 0) + 1
-    db.commit()
-    db.refresh(record)
+    if duplicate:
+        raise ConflictError("Attendance already marked for this session today")
+
+    # =========================================================================
+    # PHASE 3: CREATE ATTENDANCE RECORD (all validations passed)
+    # =========================================================================
+
+    try:
+        record = AttendanceRecord(
+            timetable_id=actual_timetable_id,
+            student_id=current_user.id,
+            enrollment_id=enrollment.id,
+            teacher_id=timetable.teacher_id,
+            division_id=timetable.division_id,
+            batch_id=timetable.batch_id,
+            location_id=timetable.location_id,
+            marked_at=now,
+            status=AttendanceStatus.PRESENT,
+            device_info=device_info_str,
+        )
+        db.add(record)
+        entry.used_count = (entry.used_count or 0) + 1
+        db.commit()
+        db.refresh(record)
+        
+    except IntegrityError as e:
+        # Catch any database constraint violations (belt-and-suspenders)
+        db.rollback()
+        logger.error(f"[INTEGRITY ERROR] Duplicate attendance attempt: {e}", exc_info=True)
+        raise ConflictError(
+            "Attendance already marked for this session. "
+            "This may happen if you submitted the form multiple times."
+        )
+    except Exception as e:
+        # Any other database error
+        db.rollback()
+        logger.error(f"[CRITICAL ERROR] Failed to mark attendance: {e}", exc_info=True)
+        raise ValidationError("Failed to mark attendance. Please try again.")
+
+    # =========================================================================
+    # PHASE 4: POST-CREATION NOTIFICATIONS & BROADCASTS
+    # =========================================================================
 
     if timetable.teacher_id:
-        create_notification(
-            db,
-            user_id=timetable.teacher_id,
-            title="New attendance marked",
-            message=f"{current_user.first_name} {current_user.last_name} marked attendance for {timetable.subject}.",
-        )
+        try:
+            create_notification(
+                db,
+                user_id=timetable.teacher_id,
+                title="New attendance marked",
+                message=f"{current_user.first_name} {current_user.last_name} marked attendance for {timetable.subject}.",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to create notification: {e}")
 
     await attendance_ws_manager.broadcast(
         actual_timetable_id,
