@@ -180,6 +180,104 @@ function TiltCard({ children, className = '' }) {
 
 /* ══════════════════ 3D DEVICE ══════════════════ */
 function DeviceMockup() {
+  const [screenState, setScreenState] = useState(0)
+  const screens = [
+    {
+      id: 'qr',
+      content: (
+        <div className="psc-qr">
+          <div className="psc-qr-frame">
+            <div className="psc-qr-grid">
+              {[...Array(25)].map((_, i) => (
+                <div key={i} className={`psc-qr-cell ${[0,1,2,3,4,5,9,10,12,14,15,19,20,21,22,23,24].includes(i) ? 'filled' : ''}`} />
+              ))}
+            </div>
+            <div className="qr-corner qc-tl" /><div className="qr-corner qc-tr" />
+            <div className="qr-corner qc-bl" />
+          </div>
+          <span className="psc-qr-label">Scan to Mark Attendance</span>
+          <div className="psc-timer"><div className="psc-timer-bar" /></div>
+        </div>
+      )
+    },
+    {
+      id: 'verifying',
+      content: (
+        <div className="psc-verifying">
+          <motion.div
+            className="verify-item"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <MapPin size={18} />
+            <span>Checking Geofence...</span>
+            <motion.div className="spinner" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} />
+          </motion.div>
+          <motion.div
+            className="verify-item"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.7 }}
+          >
+            <Wifi size={18} />
+            <span>Validating Network...</span>
+            <motion.div className="spinner" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear', delay: 1.5 }} />
+          </motion.div>
+          <motion.div
+            className="verify-item"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 3.2 }}
+          >
+            <Shield size={18} />
+            <span>Securing Connection...</span>
+            <motion.div className="spinner" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear', delay: 3 }} />
+          </motion.div>
+        </div>
+      )
+    },
+    {
+      id: 'success',
+      content: (
+        <div className="psc-success">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
+          >
+            <CheckCircle size={48} className="success-icon" />
+          </motion.div>
+          <motion.h3
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            Attendance Marked
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            Welcome, Priya!
+          </motion.p>
+        </div>
+      )
+    }
+  ]
+
+  useEffect(() => {
+    const sequence = () => {
+      setScreenState(0); // QR
+      setTimeout(() => setScreenState(1), 4000); // Verifying
+      setTimeout(() => setScreenState(2), 8000); // Success
+    };
+    sequence();
+    const interval = setInterval(sequence, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="device-scene">
       <div className="ring ring1" /><div className="ring ring2" /><div className="ring ring3" />
@@ -193,19 +291,18 @@ function DeviceMockup() {
               <span className="psc-logo">🎓 SmartAttend</span>
               <Bell size={11} className="psc-bell" />
             </div>
-            <div className="psc-qr">
-              <div className="psc-qr-frame">
-                <div className="psc-qr-grid">
-                  {[...Array(25)].map((_, i) => (
-                    <div key={i} className={`psc-qr-cell ${[0,1,2,3,4,5,9,10,12,14,15,19,20,21,22,23,24].includes(i) ? 'filled' : ''}`} />
-                  ))}
-                </div>
-                <div className="qr-corner qc-tl" /><div className="qr-corner qc-tr" />
-                <div className="qr-corner qc-bl" />
-              </div>
-              <span className="psc-qr-label">Scan to Mark Attendance</span>
-              <div className="psc-timer"><div className="psc-timer-bar" /></div>
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={screenState}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="screen-content-wrapper"
+              >
+                {screens[screenState].content}
+              </motion.div>
+            </AnimatePresence>
             <div className="psc-stats">
               <div className="psc-stat-item"><TrendingUp size={9} /><span>32 / 40</span></div>
               <div className="psc-stat-item green"><CheckCircle size={9} /><span>Verified</span></div>
@@ -281,6 +378,12 @@ function ArchNode({ icon: Icon, label, sub, color }) {
 }
 
 function ArchDiagramV2() {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  })
+
   const legendItems = [
     { icon: Lock,      label: 'JWT + Refresh Tokens' },
     { icon: RefreshCw, label: 'Code Rotation (QR/OTP)' },
@@ -293,52 +396,55 @@ function ArchDiagramV2() {
   ]
 
   return (
-    <div className="v2-arch-outer">
+    <div className="v2-arch-outer" ref={ref}>
       {/* ── Left: stacked layers ── */}
       <div className="v2-arch-main-col">
-        {ARCH_LAYERS_V2.map((layer, li) => (
-          <div key={layer.id} className="v2-arch-row">
-            <motion.div
-              className="v2-arch-layer"
-              style={{ '--lc': layer.color }}
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: li * 0.12, duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <div className="v2-arch-layer-head">
-                <div className="v2-arch-layer-badge"
-                  style={{ background: `${layer.color}18`, borderColor: `${layer.color}35` }}>
-                  <layer.icon size={13} style={{ color: layer.color }} />
-                  <span style={{ color: layer.color }}>{layer.label}</span>
-                </div>
-                <p className="v2-arch-layer-desc">{layer.desc}</p>
-              </div>
-              <div className="v2-arch-nodes">
-                {layer.nodes.map((n, ni) => <ArchNode key={ni} {...n} />)}
-              </div>
-              <div className="v2-arch-layer-glow"
-                style={{ background: `radial-gradient(ellipse at center, ${layer.color}12, transparent 70%)` }} />
-            </motion.div>
-
-            {li < ARCH_LAYERS_V2.length - 1 && (
-              <motion.div className="v2-arch-connector"
-                initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-                transition={{ delay: li * 0.12 + 0.3 }} viewport={{ once: true }}
+        {ARCH_LAYERS_V2.map((layer, li) => {
+          const y = useTransform(scrollYProgress, [0, 1], [-100 * (ARCH_LAYERS_V2.length - li), 0])
+          return (
+            <div key={layer.id} className="v2-arch-row">
+              <motion.div
+                className="v2-arch-layer"
+                style={{ '--lc': layer.color, y }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: li * 0.1, duration: 0.5 }}
+                viewport={{ once: true }}
               >
-                <div className="v2-conn-line">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="v2-conn-packet" style={{ animationDelay: `${i * 0.6}s` }} />
-                  ))}
+                <div className="v2-arch-layer-head">
+                  <div className="v2-arch-layer-badge"
+                    style={{ background: `${layer.color}18`, borderColor: `${layer.color}35` }}>
+                    <layer.icon size={13} style={{ color: layer.color }} />
+                    <span style={{ color: layer.color }}>{layer.label}</span>
+                  </div>
+                  <p className="v2-arch-layer-desc">{layer.desc}</p>
                 </div>
-                <div className="v2-conn-label">
-                  <span className="v2-conn-main">{FLOW_LABELS[li].label}</span>
-                  <span className="v2-conn-sub">{FLOW_LABELS[li].sub}</span>
+                <div className="v2-arch-nodes">
+                  {layer.nodes.map((n, ni) => <ArchNode key={ni} {...n} />)}
                 </div>
+                <div className="v2-arch-layer-glow"
+                  style={{ background: `radial-gradient(ellipse at center, ${layer.color}12, transparent 70%)` }} />
               </motion.div>
-            )}
-          </div>
-        ))}
+
+              {li < ARCH_LAYERS_V2.length - 1 && (
+                <motion.div className="v2-arch-connector"
+                  initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
+                  transition={{ delay: li * 0.12 + 0.3 }} viewport={{ once: true }}
+                >
+                  <div className="v2-conn-line">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="v2-conn-packet" style={{ animationDelay: `${i * 0.6}s` }} />
+                    ))}
+                  </div>
+                  <div className="v2-conn-label">
+                    <span className="v2-conn-main">{FLOW_LABELS[li].label}</span>
+                    <span className="v2-conn-sub">{FLOW_LABELS[li].sub}</span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )
+        })}
       </div>{/* end v2-arch-main-col */}
 
       {/* ── Right: sticky legend ── */}
@@ -349,7 +455,7 @@ function ArchDiagramV2() {
             className="v2-legend-item"
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06 }}
+            transition={{ delay: i * 0.06, duration: 0.5 }}
             viewport={{ once: true }}
           >
             <item.icon size={13} className="v2-legend-icon" />
@@ -586,21 +692,48 @@ export default function LandingPage() {
             <div className="section-tag">How It Works</div>
             <h2 className="section-h2">Four Steps.<br /><span className="grad-text">Zero Proxies.</span></h2>
           </div>
-          <div className="how-steps">
+          <div className="how-steps-v2">
             {HOW_STEPS.map((s, i) => (
-              <motion.div key={s.step} className="how-step"
-                initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.13 }} viewport={{ once: true }}
+              <motion.div
+                key={s.step}
+                className="how-step-v2"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.2, duration: 0.6 }}
+                viewport={{ once: true }}
               >
-                <div className="how-step-num">{s.step}</div>
-                {i < HOW_STEPS.length - 1 && <div className="how-step-arrow"><ChevronRight size={16}/></div>}
-                <div className="how-step-body">
-                  <div className="how-step-icon"><s.icon size={20}/></div>
-                  <h3 className="how-step-title">{s.title}</h3>
-                  <p className="how-step-desc">{s.desc}</p>
+                <div className="how-step-v2-icon" style={{ '--icon-bg': `color-mix(in srgb, ${FEATURES[i % FEATURES.length].color} 20%, transparent)` }}>
+                  <s.icon size={24} style={{ color: FEATURES[i % FEATURES.length].color }}/>
                 </div>
+                <div className="how-step-v2-num">{s.step}</div>
+                <h3 className="how-step-v2-title">{s.title}</h3>
+                <p className="how-step-v2-desc">{s.desc}</p>
               </motion.div>
             ))}
+            <motion.div
+              className="how-connector-line"
+              initial={{ pathLength: 0 }}
+              whileInView={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeInOut" }}
+              viewport={{ once: true }}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 1100 100" preserveAspectRatio="none">
+                <motion.path
+                  d="M 100,50 C 250,50 250,50 400,50 C 550,50 550,50 700,50 C 850,50 850,50 1000,50"
+                  fill="transparent"
+                  stroke="url(#grad-connector)"
+                  strokeWidth="2"
+                  strokeDasharray="5 5"
+                />
+                <defs>
+                  <linearGradient id="grad-connector" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(99, 102, 241, 0.2)" />
+                    <stop offset="50%" stopColor="rgba(99, 102, 241, 1)" />
+                    <stop offset="100%" stopColor="rgba(99, 102, 241, 0.2)" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </motion.div>
           </div>
         </div>
       </section>
